@@ -2,14 +2,30 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Header from '../components/Header'
 
 const cards = [
-  { id: 1, name: '桃乃木かな', cup: 'Eカップ', tags: ['清楚系', 'スレンダー', 'ロリ'], emoji: '👩' },
-  { id: 2, name: '三上悠亜',   cup: 'Cカップ', tags: ['アイドル', '清楚', '美脚'],    emoji: '👱' },
-  { id: 3, name: '明日花キラ', cup: 'Iカップ', tags: ['ギャル', '巨乳', '豊胸'],      emoji: '🙍' },
-  { id: 4, name: '天使もえ',   cup: 'Dカップ', tags: ['ロリ', 'かわいい', '清楚'],    emoji: '👧' },
-  { id: 5, name: '深田えいみ', cup: 'Gカップ', tags: ['巨乳', 'グラマー', '色白'],    emoji: '💁' },
+  {
+    id: 1, name: '桃乃木かな', cup: 'Eカップ', tags: ['清楚系', 'スレンダー', 'ロリ'],
+    image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=400&fit=crop',
+  },
+  {
+    id: 2, name: '三上悠亜', cup: 'Cカップ', tags: ['アイドル', '清楚', '美脚'],
+    image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop',
+  },
+  {
+    id: 3, name: '明日花キラ', cup: 'Iカップ', tags: ['ギャル', '巨乳', '豊胸'],
+    image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=400&fit=crop',
+  },
+  {
+    id: 4, name: '天使もえ', cup: 'Dカップ', tags: ['ロリ', 'かわいい', '清楚'],
+    image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=400&fit=crop',
+  },
+  {
+    id: 5, name: '深田えいみ', cup: 'Gカップ', tags: ['巨乳', 'グラマー', '色白'],
+    image: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=400&fit=crop',
+  },
 ]
 
 export default function SwipePage() {
@@ -104,8 +120,13 @@ export default function SwipePage() {
             transform: getCardTransform(),
             transition: animating ? 'transform 0.28s ease' : 'none',
           }}>
-            <div style={{ height: '260px', background: '#2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '90px' }}>
-              {current.emoji}
+            <div style={{ height: '260px', position: 'relative', overflow: 'hidden' }}>
+              <Image
+                src={current.image}
+                alt={current.name}
+                fill
+                style={{ objectFit: 'cover' }}
+              />
             </div>
             <div style={{ padding: '20px' }}>
               <div style={{ fontSize: '24px', fontWeight: '600' }}>{current.name}</div>
