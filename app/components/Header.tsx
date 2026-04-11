@@ -10,18 +10,31 @@ export default function Header() {
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      background: 'rgba(15,15,15,0.85)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid #1a1a1a',
+      background: 'rgba(255,255,255,0.92)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      borderBottom: '1px solid rgba(235,235,240,0.8)',
       padding: '14px 24px',
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'center',
     }}>
       <button
         onClick={() => router.push('/')}
-        style={{ background: 'none', border: 'none', color: '#FF2D55', fontSize: '22px', fontWeight: '700', letterSpacing: '-0.5px', cursor: 'pointer', padding: 0 }}
+        style={{
+          background: 'linear-gradient(135deg, #FD297B 0%, #FF655B 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          border: 'none',
+          fontSize: '24px',
+          fontWeight: '800',
+          cursor: 'pointer',
+          padding: 0,
+          letterSpacing: '-0.5px',
+        } as React.CSSProperties}
       >
-        かずログ
+        かずログ 🔥
       </button>
     </header>
   )

@@ -1,22 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  --pink: #FD297B;
+  --orange: #FF655B;
+  --gold: #F6C90E;
+  --blue: #34E0FE;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --text: #1A1A2E;
+  --subtext: #9B9BA4;
+  --border: #EBEBF0;
+  --gradient: linear-gradient(135deg, #FD297B 0%, #FF655B 100%);
+  --shadow-card: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-btn: 0 8px 24px rgba(253,41,123,0.35);
+}
+
 body {
-  background: #0F0F0F;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 button {
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s;
+  font-family: 'Poppins', sans-serif;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 button:active {
-  opacity: 0.8;
-  transform: scale(0.97);
+  transform: scale(0.95) !important;
+}
+
+::-webkit-scrollbar { display: none; }
+* {
+  scrollbar-width: none;
 }
