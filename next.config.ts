@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'pics.dmm.co.jp',
+      },
+      {
+        protocol: 'https',
+        hostname: 'digital.dmm.co.jp',
+      },
     ],
   },
 };
