@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const API_ID = process.env.DMM_API_ID
 const AFFILIATE_ID = process.env.DMM_AFFILIATE_ID
+const SITE_AFFILIATE_ID = process.env.DMM_SITE_AFFILIATE_ID
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -32,6 +33,15 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(url)
     const data = await res.json()
+
+    // affiliateURLをサイト用IDに差し替え
+    if (data.result?.items) {
+      data.result.items = data.result.items.map((item: { affiliateURL?: string }) => ({
+        ...item,
+        affiliateURL: item.affiliateURL?.replace(AFFILIATE_ID!, SITE_AFFILIATE_ID!) ?? item.affiliateURL,
+      }))
+    }
+
     return NextResponse.json(data)
   } catch (error) {
     return NextResponse.json({ error: 'API fetch failed' }, { status: 500 })
