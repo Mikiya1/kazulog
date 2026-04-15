@@ -242,7 +242,7 @@ export default function SwipePage() {
               boxShadow: 'var(--shadow-card)', cursor: 'grab', userSelect: 'none',
             }}
           >
-            <div style={{ height: '320px', position: 'relative', overflow: 'hidden', pointerEvents: 'none' }}>
+            <div style={{ height: '360px', position: 'relative', overflow: 'hidden', pointerEvents: 'none' }}>
               {current.imageUrl ? (
                 <Image
                   src={current.imageUrl}

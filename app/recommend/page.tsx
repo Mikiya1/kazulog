@@ -1,138 +1,203 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 
-const works = [
-  {
-    id: 1, title: '清楚系美少女との蜜月', actress: '桃乃木かな', cup: 'Eカップ', tags: ['清楚系', 'スレンダー'],
-    image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=300&h=300&fit=crop',
-  },
-  {
-    id: 2, title: 'ギャルの誘惑〜夏の記憶〜', actress: '明日花キラ', cup: 'Iカップ', tags: ['ギャル', '巨乳'],
-    image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&h=300&fit=crop',
-  },
-  {
-    id: 3, title: 'アイドル卒業後の秘密', actress: '三上悠亜', cup: 'Cカップ', tags: ['アイドル', '美脚'],
-    image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=300&fit=crop',
-  },
-  {
-    id: 4, title: '憧れのお姉さんと過ごした夜', actress: '深田えいみ', cup: 'Gカップ', tags: ['巨乳', 'グラマー'],
-    image: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=300&h=300&fit=crop',
-  },
-  {
-    id: 5, title: '天然少女の初体験', actress: '天使もえ', cup: 'Dカップ', tags: ['ロリ', 'かわいい'],
-    image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300&h=300&fit=crop',
-  },
-]
+type Work = {
+  content_id: string
+  title: string
+  affiliateURL: string
+  price: string
+  imageURL: { large: string; small: string }
+  iteminfo?: { actress?: { id: number; name: string }[] }
+}
 
 function RecommendContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const tagsParam = searchParams.get('tags') ?? ''
-  const likedTags = tagsParam ? tagsParam.split(',') : []
+  const idsParam = searchParams.get('ids') ?? ''
+  const namesParam = searchParams.get('names') ?? ''
 
-  const scored = works.map(work => ({
-    ...work,
-    score: work.tags.filter(t => likedTags.includes(t)).length,
-  })).sort((a, b) => b.score - a.score)
+  const ids = idsParam ? idsParam.split(',') : []
+  const names = namesParam ? namesParam.split(',') : []
+  const likedActresses = ids.map((id, i) => ({ id, name: names[i] ?? '' }))
 
-  const reason = likedTags.length > 0
-    ? `${[...new Set(likedTags)].slice(0, 3).join(' · ')} が好きなあなたへ`
-    : 'あなたへのおすすめ作品です'
+  const [selectedActress, setSelectedActress] = useState<{ id: string; name: string } | null>(
+    likedActresses[0] ?? null
+  )
+  const [works, setWorks] = useState<Work[]>([])
+  const [loading, setLoading] = useState(false)
+  const [sort, setSort] = useState<'rank' | 'date'>('rank')
+
+  useEffect(() => {
+    if (!selectedActress) return
+    setLoading(true)
+    setWorks([])
+    fetch(`/api/dmm?actress=${encodeURIComponent(selectedActress.name)}&hits=10&sort=${sort}`)
+      .then(r => r.json())
+      .then(data => {
+        setWorks(data.result?.items ?? [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [selectedActress, sort])
+
+  if (likedActresses.length === 0) {
+    return (
+      <>
+        <Header />
+        <main style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '24px' }}>
+          <div style={{ fontSize: '48px' }}>😢</div>
+          <p style={{ fontSize: '16px', color: 'var(--subtext)', textAlign: 'center' }}>LIKEした女優がいませんでした</p>
+          <button
+            onClick={() => router.push('/swipe')}
+            style={{ background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '16px 32px', fontSize: '16px', fontWeight: '700', boxShadow: 'var(--shadow-btn)' }}
+          >
+            もう一度診断する
+          </button>
+        </main>
+      </>
+    )
+  }
 
   return (
     <>
       <Header />
       <main style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)', padding: '24px 20px', maxWidth: '480px', margin: '0 auto' }}>
 
-        <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '6px', color: 'var(--text)' }}>
-          あなたへの<br />おすすめ 💖
+        <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '16px' }}>
+          気になった女優 💖
         </h2>
 
-        <div style={{
-          background: 'linear-gradient(135deg, #FD297B10, #FF655B08)',
-          border: '1px solid #FD297B22',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          fontSize: '13px',
-          color: '#FD297B',
-          fontWeight: '500',
-          marginBottom: '24px',
-        }}>
-          ✨ {reason}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
-          {scored.map((work, i) => (
-            <div key={work.id} style={{
-              background: 'var(--card)',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              boxShadow: i === 0 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
-              border: i === 0 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
-              position: 'relative',
-            }}>
-              {i === 0 && (
-                <div style={{
-                  position: 'absolute', top: '12px', left: '12px', zIndex: 2,
-                  background: 'var(--gradient)',
-                  color: '#fff',
-                  fontSize: '10px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontWeight: '700',
-                  letterSpacing: '0.5px',
-                  boxShadow: 'var(--shadow-btn)',
-                }}>
-                  💖 BEST MATCH
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                <div style={{ width: '100px', minHeight: '110px', position: 'relative', flexShrink: 0 }}>
-                  <Image src={work.image} alt={work.title} fill style={{ objectFit: 'cover' }} />
-                </div>
-                <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
-                    {work.title}
-                  </div>
-                  <div style={{
-                    fontSize: '12px', marginTop: '4px', fontWeight: '600',
-                    background: 'var(--gradient)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  } as React.CSSProperties}>
-                    {work.actress} / {work.cup}
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-                    {work.tags.map(tag => (
-                      <span key={tag} style={{
-                        fontSize: '11px', color: 'var(--subtext)',
-                        background: 'var(--bg)', padding: '3px 10px',
-                        borderRadius: '20px', fontWeight: '500',
-                        border: '1px solid var(--border)',
-                      }}>{tag}</span>
-                    ))}
-                  </div>
-                  <button style={{
-                    marginTop: '10px',
-                    background: 'var(--gradient)',
-                    color: '#fff', border: 'none',
-                    borderRadius: '20px', padding: '7px 16px',
-                    fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
-                  }}>
-                    作品を見る →
-                  </button>
-                </div>
-              </div>
-            </div>
+        {/* 女優タブ */}
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '4px' }}>
+          {likedActresses.map(actress => (
+            <button
+              key={actress.id}
+              onClick={() => setSelectedActress(actress)}
+              style={{
+                flexShrink: 0,
+                padding: '8px 18px',
+                borderRadius: '50px',
+                border: selectedActress?.id === actress.id ? 'none' : '1.5px solid var(--border)',
+                background: selectedActress?.id === actress.id ? 'var(--gradient)' : 'var(--card)',
+                color: selectedActress?.id === actress.id ? '#fff' : 'var(--text)',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: selectedActress?.id === actress.id ? 'var(--shadow-btn)' : '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            >
+              {actress.name}
+            </button>
           ))}
         </div>
+
+        {/* ソート切り替え */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+          <button
+            onClick={() => setSort('rank')}
+            style={{
+              padding: '6px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+              background: sort === 'rank' ? '#FD297B' : 'var(--card)',
+              color: sort === 'rank' ? '#fff' : 'var(--subtext)',
+              border: sort === 'rank' ? 'none' : '1.5px solid var(--border)',
+            }}
+          >
+            人気順
+          </button>
+          <button
+            onClick={() => setSort('date')}
+            style={{
+              padding: '6px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+              background: sort === 'date' ? '#FD297B' : 'var(--card)',
+              color: sort === 'date' ? '#fff' : 'var(--subtext)',
+              border: sort === 'date' ? 'none' : '1.5px solid var(--border)',
+            }}
+          >
+            最新順
+          </button>
+        </div>
+
+        {/* 作品一覧 */}
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', gap: '12px' }}>
+            <div style={{ fontSize: '24px' }}>🔥</div>
+            <span style={{ color: 'var(--subtext)', fontWeight: '600' }}>読み込み中...</span>
+          </div>
+        ) : works.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--subtext)' }}>
+            作品が見つかりませんでした
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
+            {works.map((work, i) => (
+              <div
+                key={work.content_id}
+                style={{
+                  background: 'var(--card)',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                  boxShadow: i === 0 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
+                  border: i === 0 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
+                  position: 'relative',
+                }}
+              >
+                {i === 0 && (
+                  <div style={{
+                    position: 'absolute', top: '12px', left: '12px', zIndex: 2,
+                    background: 'var(--gradient)', color: '#fff',
+                    fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
+                    fontWeight: '700', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)',
+                  }}>
+                    💖 BEST MATCH
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                  <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
+                    <Image
+                      src={work.imageURL?.small ?? ''}
+                      alt={work.title}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      unoptimized
+                    />
+                  </div>
+                  <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
+                      {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
+                    </div>
+                    <div style={{
+                      fontSize: '13px', marginTop: '6px', fontWeight: '700',
+                      background: 'var(--gradient)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    } as React.CSSProperties}>
+                      {work.price}
+                    </div>
+                    <button
+                      onClick={() => window.open(work.affiliateURL, '_blank')}
+                      style={{
+                        marginTop: '10px',
+                        background: 'var(--gradient)',
+                        color: '#fff', border: 'none',
+                        borderRadius: '20px', padding: '7px 16px',
+                        fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
+                      }}
+                    >
+                      作品を見る →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={() => router.push('/swipe')}
