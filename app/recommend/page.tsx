@@ -5,6 +5,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
+import FavoriteButton from '../components/FavoriteButton'
 
 type Work = {
   content_id: string
@@ -21,11 +22,13 @@ function RecommendContent() {
   const idsParam = searchParams.get('ids') ?? ''
   const namesParam = searchParams.get('names') ?? ''
 
+  const imagesParam = searchParams.get('images') ?? ''
   const ids = idsParam ? idsParam.split(',') : []
   const names = namesParam ? namesParam.split(',') : []
-  const likedActresses = ids.map((id, i) => ({ id, name: names[i] ?? '' }))
+  const images = imagesParam ? imagesParam.split(',').map(decodeURIComponent) : []
+  const likedActresses = ids.map((id, i) => ({ id, name: names[i] ?? '', imageUrl: images[i] ?? '' }))
 
-  const [selectedActress, setSelectedActress] = useState<{ id: string; name: string } | null>(
+  const [selectedActress, setSelectedActress] = useState<{ id: string; name: string; imageUrl: string } | null>(
     likedActresses[0] ?? null
   )
   const [works, setWorks] = useState<Work[]>([])
@@ -119,6 +122,17 @@ function RecommendContent() {
             </button>
           ))}
         </div>
+
+        {/* お気に入りボタン */}
+        {selectedActress && (
+          <div style={{ marginBottom: '16px' }}>
+            <FavoriteButton
+              actressId={selectedActress.id}
+              actressName={selectedActress.name}
+              actressImage={selectedActress.imageUrl ?? ''}
+            />
+          </div>
+        )}
 
         {/* ソート切り替え */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>

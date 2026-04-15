@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import AuthButton from './AuthButton'
 
 export default function Header() {
   const router = useRouter()
@@ -17,7 +18,7 @@ export default function Header() {
       padding: '14px 24px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'space-between',
     }}>
       <button
         onClick={() => router.push('/')}
@@ -36,6 +37,22 @@ export default function Header() {
       >
         かずログ 🔥
       </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={() => router.push('/favorites')}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '22px',
+            cursor: 'pointer',
+            padding: '4px',
+          }}
+        >
+          💖
+        </button>
+        <AuthButton />
+      </div>
     </header>
   )
 }

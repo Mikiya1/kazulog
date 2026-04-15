@@ -177,9 +177,10 @@ export default function SwipePage() {
           </div>
           <button
             onClick={() => {
-              const ids = likedItems.map(i => i.id)
-              const names = likedItems.map(i => i.name)
-              router.push(`/recommend?ids=${ids.join(',')}&names=${names.join(',')}`)
+            const ids = likedItems.map(i => i.id)
+            const names = likedItems.map(i => i.name)
+            const images = likedItems.map(i => encodeURIComponent(i.imageUrl))
+            router.push(`/recommend?ids=${ids.join(',')}&names=${names.join(',')}&images=${images.join(',')}`)
             }}
             style={{ background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '18px', fontSize: '17px', fontWeight: '700', width: '100%', boxShadow: 'var(--shadow-btn)' }}
           >
