@@ -30,20 +30,44 @@ function RecommendContent() {
   )
   const [works, setWorks] = useState<Work[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [sort, setSort] = useState<'rank' | 'date'>('rank')
+  const [offset, setOffset] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const HITS = 10
 
   useEffect(() => {
     if (!selectedActress) return
     setLoading(true)
     setWorks([])
-    fetch(`/api/dmm?actress=${encodeURIComponent(selectedActress.name)}&hits=10&sort=${sort}`)
+    setOffset(1)
+    setHasMore(true)
+    fetch(`/api/dmm?actress=${encodeURIComponent(selectedActress.name)}&hits=${HITS}&sort=${sort}&offset=1`)
       .then(r => r.json())
       .then(data => {
-        setWorks(data.result?.items ?? [])
+        const items = data.result?.items ?? []
+        setWorks(items)
+        setHasMore(items.length === HITS)
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [selectedActress, sort])
+
+  const loadMore = () => {
+    if (!selectedActress || loadingMore) return
+    const nextOffset = offset + HITS
+    setLoadingMore(true)
+    fetch(`/api/dmm?actress=${encodeURIComponent(selectedActress.name)}&hits=${HITS}&sort=${sort}&offset=${nextOffset}`)
+      .then(r => r.json())
+      .then(data => {
+        const items = data.result?.items ?? []
+        setWorks(prev => [...prev, ...items])
+        setOffset(nextOffset)
+        setHasMore(items.length === HITS)
+        setLoadingMore(false)
+      })
+      .catch(() => setLoadingMore(false))
+  }
 
   if (likedActresses.length === 0) {
     return (
@@ -133,70 +157,95 @@ function RecommendContent() {
             作品が見つかりませんでした
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
-            {works.map((work, i) => (
-              <div
-                key={work.content_id}
-                style={{
-                  background: 'var(--card)',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                  boxShadow: i === 0 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
-                  border: i === 0 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
-                  position: 'relative',
-                }}
-              >
-                {i === 0 && (
-                  <div style={{
-                    position: 'absolute', top: '12px', left: '12px', zIndex: 2,
-                    background: 'var(--gradient)', color: '#fff',
-                    fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
-                    fontWeight: '700', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)',
-                  }}>
-                    💖 BEST MATCH
-                  </div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                  <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
-                    <Image
-                      src={work.imageURL?.small ?? ''}
-                      alt={work.title}
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      unoptimized
-                    />
-                  </div>
-                  <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
-                      {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
-                    </div>
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
+              {works.map((work, i) => (
+                <div
+                  key={work.content_id}
+                  style={{
+                    background: 'var(--card)',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    boxShadow: i === 0 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
+                    border: i === 0 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
+                    position: 'relative',
+                  }}
+                >
+                  {i === 0 && (
                     <div style={{
-                      fontSize: '13px', marginTop: '6px', fontWeight: '700',
-                      background: 'var(--gradient)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    } as React.CSSProperties}>
-                      {work.price}
+                      position: 'absolute', top: '12px', left: '12px', zIndex: 2,
+                      background: 'var(--gradient)', color: '#fff',
+                      fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
+                      fontWeight: '700', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)',
+                    }}>
+                      💖 BEST MATCH
                     </div>
-                    <button
-                      onClick={() => window.open(work.affiliateURL, '_blank')}
-                      style={{
-                        marginTop: '10px',
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                    <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
+                      <Image
+                        src={work.imageURL?.small ?? ''}
+                        alt={work.title}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        unoptimized
+                      />
+                    </div>
+                    <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
+                        {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
+                      </div>
+                      <div style={{
+                        fontSize: '13px', marginTop: '6px', fontWeight: '700',
                         background: 'var(--gradient)',
-                        color: '#fff', border: 'none',
-                        borderRadius: '20px', padding: '7px 16px',
-                        fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
-                      }}
-                    >
-                      作品を見る →
-                    </button>
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      } as React.CSSProperties}>
+                        {work.price}
+                      </div>
+                      <button
+                        onClick={() => window.open(work.affiliateURL, '_blank')}
+                        style={{
+                          marginTop: '10px',
+                          background: 'var(--gradient)',
+                          color: '#fff', border: 'none',
+                          borderRadius: '20px', padding: '7px 16px',
+                          fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                          boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
+                        }}
+                      >
+                        作品を見る →
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* もっと見るボタン */}
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  width: '100%',
+                  background: loadingMore ? 'var(--border)' : 'var(--card)',
+                  color: loadingMore ? 'var(--subtext)' : '#FD297B',
+                  border: '1.5px solid #FD297B44',
+                  borderRadius: '50px',
+                  padding: '16px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  marginBottom: '16px',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                }}
+              >
+                {loadingMore ? '読み込み中...' : 'もっと見る +10'}
+              </button>
+            )}
+          </>
         )}
 
         <button
@@ -207,6 +256,7 @@ function RecommendContent() {
             borderRadius: '50px', padding: '16px',
             fontSize: '15px', fontWeight: '600', cursor: 'pointer',
             boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            marginBottom: '32px',
           }}
         >
           もう一度診断する 🔄
