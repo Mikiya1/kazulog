@@ -110,14 +110,18 @@ export default function FavoritesPage() {
               }}
             >
               <div style={{ height: '160px', position: 'relative', background: '#f8f0f4' }}>
-                <Image
-                  src={fav.actress_image}
-                  alt={fav.actress_name}
-                  fill
-                  style={{ objectFit: 'contain', objectPosition: 'center' }}
-                  unoptimized
-                />
-              </div>
+                {fav.actress_image ? (
+                    <Image
+                    src={fav.actress_image}
+                    alt={fav.actress_name}
+                    fill
+                    style={{ objectFit: 'contain', objectPosition: 'center' }}
+                    unoptimized
+                    />
+                ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
+                )}
+                </div>
               <div style={{ padding: '12px' }}>
                 <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text)' }}>
                   {fav.actress_name}
