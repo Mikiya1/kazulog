@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
   })
 
   if (keyword) params.set('keyword', keyword)
+  if (searchParams.get('initial')) params.set('initial', searchParams.get('initial')!)
 
   const url = `https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`
 
@@ -84,7 +85,12 @@ export async function GET(request: NextRequest) {
         a.height ? `${a.height}cm` : null,
       ].filter(Boolean) as string[],
     }))
-    return NextResponse.json({ result: { actress: actresses } })
+    return NextResponse.json({
+      result: {
+        actress: actresses,
+        total_count: data.result?.total_count ?? 0,
+      }
+    })
   } catch {
     return NextResponse.json({ error: 'API fetch failed' }, { status: 500 })
   }

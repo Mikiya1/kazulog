@@ -39,6 +39,32 @@ export default function FavoritesPage() {
     })
   }, [])
 
+  const [removedIds, setRemovedIds] = useState<string[]>([])
+
+  const removeFavorite = async (actressId: string) => {
+    if (!user) return
+    if (removedIds.includes(actressId)) {
+      // 解除済みなら再登録
+      await supabase
+        .from('favorites')
+        .upsert({
+          user_id: user.id,
+          actress_id: actressId,
+          actress_name: favorites.find(f => f.actress_id === actressId)?.actress_name ?? '',
+          actress_image: favorites.find(f => f.actress_id === actressId)?.actress_image ?? '',
+        }, { onConflict: 'user_id,actress_id' })
+      setRemovedIds(prev => prev.filter(id => id !== actressId))
+    } else {
+      // 登録済みなら解除
+      await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('actress_id', actressId)
+      setRemovedIds(prev => [...prev, actressId])
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -100,40 +126,62 @@ export default function FavoritesPage() {
           {favorites.map(fav => (
             <div
               key={fav.id}
-              onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}`)}
               style={{
                 background: 'var(--card)',
                 borderRadius: '20px',
                 overflow: 'hidden',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                cursor: 'pointer',
+                position: 'relative',
               }}
             >
-              <div style={{ height: '160px', position: 'relative', background: '#f8f0f4' }}>
-                {fav.actress_image ? (
+              {/* お気に入り解除ボタン */}
+              <button
+                onClick={() => removeFavorite(fav.actress_id)}
+                style={{
+                  position: 'absolute', top: '8px', right: '8px', zIndex: 3,
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.9)',
+                  border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '16px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  opacity: removedIds.includes(fav.actress_id) ? 0.4 : 1,
+                }}
+              >
+                {removedIds.includes(fav.actress_id) ? '🤍' : '💖'}
+              </button>
+
+              {/* 女優画像 */}
+              <div
+                onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div style={{ height: '160px', position: 'relative', background: '#f8f0f4' }}>
+                  {fav.actress_image ? (
                     <Image
-                    src={fav.actress_image}
-                    alt={fav.actress_name}
-                    fill
-                    style={{ objectFit: 'contain', objectPosition: 'center' }}
-                    unoptimized
+                      src={fav.actress_image}
+                      alt={fav.actress_name}
+                      fill
+                      style={{ objectFit: 'contain', objectPosition: 'center' }}
+                      unoptimized
                     />
-                ) : (
+                  ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
-                )}
+                  )}
                 </div>
-              <div style={{ padding: '12px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text)' }}>
-                  {fav.actress_name}
-                </div>
-                <div style={{
-                  fontSize: '12px', marginTop: '4px', fontWeight: '600',
-                  background: 'var(--gradient)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                } as React.CSSProperties}>
-                  作品を見る →
+                <div style={{ padding: '12px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text)' }}>
+                    {fav.actress_name}
+                  </div>
+                  <div style={{
+                    fontSize: '12px', marginTop: '4px', fontWeight: '600',
+                    background: 'var(--gradient)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  } as React.CSSProperties}>
+                    作品を見る →
+                  </div>
                 </div>
               </div>
             </div>

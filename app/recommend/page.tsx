@@ -100,7 +100,7 @@ function RecommendContent() {
         </h2>
 
         {/* 女優タブ */}
-        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
           {likedActresses.map(actress => (
             <button
               key={actress.id}

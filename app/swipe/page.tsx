@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
+import { supabase } from '../lib/supabase'
 
 type Actress = {
   id: string
@@ -21,11 +22,13 @@ const FEATURED_ACTRESSES: Actress[] = [
   { id: '1044099', name: '美園和花', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/misono_waka.jpg', tags: ['Gカップ'] },
   { id: '1054998', name: '松本いちか', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/matumoto_itika.jpg', tags: ['Cカップ', '153cm'] },
   { id: '1076785', name: '神木麗', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kamiki_rei.jpg', tags: ['Gカップ', '169cm'] },
-  { id: '1099813', name: '花守夏歩', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/hanamori_kaho.jpg', tags: [] },
   { id: '1068671', name: '北野未奈', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kitano_mina.jpg', tags: ['Hカップ'] },
   { id: '1042129', name: '七沢みあ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/nanasawa_mia.jpg', tags: ['Cカップ', '145cm'] },
+]
+
+const MORE_ACTRESSES: Actress[] = [
   { id: '1069697', name: 'MINAMO', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/minamo.jpg', tags: [] },
-  { id: '26225',   name: '波多野結衣', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/hatano_yui.jpg', tags: ['Eカップ', '163cm'] },
+  { id: '26225', name: '波多野結衣', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/hatano_yui.jpg', tags: ['Eカップ', '163cm'] },
   { id: '1085754', name: '九井スナオ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kokonoi_sunao.jpg', tags: [] },
   { id: '1055590', name: '青空ひかり', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/aozora_hikari.jpg', tags: ['Dカップ', '153cm'] },
   { id: '1084337', name: '羽月乃蒼', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/haruna_noa.jpg', tags: [] },
@@ -34,12 +37,6 @@ const FEATURED_ACTRESSES: Actress[] = [
   { id: '1046723', name: '皆月ひかる', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/minazuki_hikaru.jpg', tags: ['Bカップ', '148cm'] },
   { id: '1064154', name: '月野かすみ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/tukino_kasumi.jpg', tags: ['Hカップ', '151cm'] },
   { id: '1062074', name: '宮島めい', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/miyazima_mei.jpg', tags: [] },
-  { id: '1041897', name: '神宮寺ナオ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/zinguuzi_nao.jpg', tags: ['Dカップ', '160cm'] },
-  { id: '1027558', name: '美咲かんな', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/misaki_kanna.jpg', tags: ['Eカップ', '158cm'] },
-  { id: '1092800', name: '松井日奈子', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/matui_hinako.jpg', tags: [] },
-  { id: '1067267', name: '楪カレン', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/yuzuriha_karen.jpg', tags: ['Hカップ', '148cm'] },
-  { id: '1078618', name: '尾崎えりか', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/ozaki_erika.jpg', tags: [] },
-  { id: '1043753', name: '倉木しおり', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kuraki_siori.jpg', tags: [] },
 ]
 
 export default function SwipePage() {
@@ -53,6 +50,7 @@ export default function SwipePage() {
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const isDragging = useRef(false)
   const [done, setDone] = useState(false)
+  const [superLikeToast, setSuperLikeToast] = useState<string | null>(null)
 
   useEffect(() => {
     setCards(FEATURED_ACTRESSES)
@@ -63,12 +61,32 @@ export default function SwipePage() {
   const next = cards[index + 1]
   const nextNext = cards[index + 2]
 
+  const addToFavorites = async (actress: Actress) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const { error } = await supabase
+      .from('favorites')
+      .upsert({
+        user_id: session.user.id,
+        actress_id: actress.id,
+        actress_name: actress.name,
+        actress_image: actress.imageUrl,
+      }, { onConflict: 'user_id,actress_id' })
+
+    if (!error) {
+      setSuperLikeToast(`${actress.name} をお気に入りに追加しました！`)
+      setTimeout(() => setSuperLikeToast(null), 3000)
+    }
+  }
+
   const handleSwipe = (dir: 'left' | 'right' | 'up') => {
     if (animating) return
     setDragOffset({ x: 0, y: 0 })
     setAnimating(dir)
     const liked = dir === 'right' || dir === 'up'
     if (liked && current) setLikedItems(prev => [...prev, current])
+    if (dir === 'up' && current) addToFavorites(current)
 
     setTimeout(() => {
       setAnimating(null)
@@ -177,17 +195,27 @@ export default function SwipePage() {
           </div>
           <button
             onClick={() => {
-            const ids = likedItems.map(i => i.id)
-            const names = likedItems.map(i => i.name)
-            const images = likedItems.map(i => encodeURIComponent(i.imageUrl))
-            router.push(`/recommend?ids=${ids.join(',')}&names=${names.join(',')}&images=${images.join(',')}`)
+              const ids = likedItems.map(i => i.id)
+              const names = likedItems.map(i => i.name)
+              const images = likedItems.map(i => encodeURIComponent(i.imageUrl))
+              router.push(`/recommend?ids=${ids.join(',')}&names=${names.join(',')}&images=${images.join(',')}`)
             }}
             style={{ background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '18px', fontSize: '17px', fontWeight: '700', width: '100%', boxShadow: 'var(--shadow-btn)' }}
           >
             おすすめを見る 💖
           </button>
           <button
-            onClick={() => { setIndex(0); setLikedItems([]); setDone(false) }}
+            onClick={() => {
+              setCards(MORE_ACTRESSES)
+              setIndex(0)
+              setDone(false)
+            }}
+            style={{ background: 'var(--card)', color: '#FD297B', border: '1.5px solid #FD297B44', borderRadius: '50px', padding: '16px', fontSize: '15px', fontWeight: '600', width: '100%' }}
+          >
+            もっとスワイプする +10 🔥
+          </button>
+          <button
+            onClick={() => { setCards(FEATURED_ACTRESSES); setIndex(0); setLikedItems([]); setDone(false) }}
             style={{ background: 'var(--card)', color: 'var(--subtext)', border: '1.5px solid var(--border)', borderRadius: '50px', padding: '16px', fontSize: '15px', fontWeight: '600', width: '100%' }}
           >
             もう一度やり直す
@@ -202,6 +230,21 @@ export default function SwipePage() {
   return (
     <>
       <Header />
+
+      {/* スーパーLIKEトースト通知 */}
+      {superLikeToast && (
+        <div style={{
+          position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)',
+          background: '#34E0FE', color: '#fff',
+          padding: '10px 20px', borderRadius: '20px',
+          fontSize: '13px', fontWeight: '700',
+          zIndex: 999, boxShadow: '0 4px 16px rgba(52,224,254,0.4)',
+          whiteSpace: 'nowrap',
+        }}>
+          ⭐ {superLikeToast}
+        </div>
+      )}
+
       <main style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 20px 32px', maxWidth: '480px', margin: '0 auto' }}>
 
         <div style={{ width: '100%', display: 'flex', gap: '6px', marginBottom: '20px' }}>
@@ -288,7 +331,7 @@ export default function SwipePage() {
         </div>
 
         <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--subtext)', fontWeight: '500' }}>
-          ✕ NOPE　　⭐ SUPER LIKE　　💖 LIKE
+          ✕ NOPE　　⭐ お気に入り追加　　💖 LIKE
         </div>
 
       </main>

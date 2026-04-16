@@ -39,18 +39,7 @@ export default function Header() {
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button
-          onClick={() => router.push('/favorites')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '22px',
-            cursor: 'pointer',
-            padding: '4px',
-          }}
-        >
-          💖
-        </button>
+      
         <AuthButton />
       </div>
     </header>
