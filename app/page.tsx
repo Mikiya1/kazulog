@@ -93,8 +93,19 @@ export default function Home() {
 
         {/* 人気女優 */}
         <div style={{ padding: '8px 0 0' }}>
-          <div style={{ fontSize: '11px', color: 'var(--subtext)', padding: '0 20px 12px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>
-            人気女優
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px 12px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              人気女優
+            </div>
+            <button
+              onClick={() => router.push('/actresses')}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '12px', fontWeight: '600', color: '#FD297B',
+              }}
+            >
+              もっと見る →
+            </button>
           </div>
           <div style={{ display: 'flex', gap: '14px', padding: '0 20px', overflowX: 'auto' }}>
             {POPULAR_ACTRESSES.filter(a => !favoriteIds.includes(a.id)).map(a => (
