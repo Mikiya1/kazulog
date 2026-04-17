@@ -370,15 +370,7 @@ export default function GenreSearchPage() {
                           <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 && currentPage === 1 ? '18px' : 0 }}>
                             {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
                           </div>
-                          <div style={{
-                            fontSize: '13px', marginTop: '6px', fontWeight: '700',
-                            background: 'var(--gradient)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                          } as React.CSSProperties}>
-                            {work.prices?.price}
-                          </div>
+
                           <button
                             onClick={() => window.open(work.affiliateURL, '_blank')}
                             style={{
@@ -434,3 +426,4 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
