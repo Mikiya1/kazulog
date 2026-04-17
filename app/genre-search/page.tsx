@@ -427,7 +427,7 @@ export default function GenreSearchPage() {
                           ;(e.target as HTMLInputElement).value = ''
                         }
                       }}
-                      style={{ width: '64px', padding: '6px 10px', borderRadius: '20px', border: '1.5px solid var(--border)', background: 'var(--card)', fontSize: '13px', color: 'var(--text)', textAlign: 'center', outline: 'none' }}
+                      style={{ width: '56px', height: '36px', padding: '0 8px', borderRadius: '20px', border: '1.5px solid var(--border)', background: 'var(--card)', fontSize: '13px', color: 'var(--text)', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
                     />
                   </div>
                 )}
@@ -440,5 +440,6 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
