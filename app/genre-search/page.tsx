@@ -145,8 +145,133 @@ const POPULAR_GENRES: { category: string; genres: { id: string; name: string }[]
   },
 ]
 
+
+const OTHER_GENRES = [
+  { id: '6179', name: '4時間以上作品' },
+  { id: '558', name: 'BL（ボーイズラブ）' },
+  { id: '5074', name: 'M男' },
+  { id: '6934', name: 'おじいちゃん' },
+  { id: '6947', name: 'おばあちゃん' },
+  { id: '528', name: 'お姫様' },
+  { id: '527', name: 'お嬢様・令嬢' },
+  { id: '6969', name: 'お風呂' },
+  { id: '5069', name: 'くすぐり' },
+  { id: '5009', name: 'ごっくん' },
+  { id: '59', name: 'ふたなり' },
+  { id: '5003', name: 'ぶっかけ' },
+  { id: '4076', name: 'アクション' },
+  { id: '514', name: 'アクション・格闘' },
+  { id: '6968', name: 'アクメ・オーガズム' },
+  { id: '2011', name: 'アジア女優' },
+  { id: '6965', name: 'アスリート' },
+  { id: '5076', name: 'アナルセックス' },
+  { id: '4073', name: 'アニメ' },
+  { id: '4122', name: 'イタズラ' },
+  { id: '1004', name: 'インストラクター' },
+  { id: '1040', name: 'ウェイトレス' },
+  { id: '6954', name: 'オタク' },
+  { id: '6938', name: 'オナサポ' },
+  { id: '4123', name: 'カップル' },
+  { id: '1036', name: 'キャバ嬢・風俗嬢' },
+  { id: '1005', name: 'キャンギャル' },
+  { id: '5007', name: 'クスコ' },
+  { id: '1041', name: 'コンパニオン' },
+  { id: '4058', name: 'ショタ' },
+  { id: '4018', name: 'スカトロ' },
+  { id: '1007', name: 'スチュワーデス' },
+  { id: '6940', name: 'スパンキング' },
+  { id: '4096', name: 'スポーツ' },
+  { id: '568', name: 'ダーク系' },
+  { id: '6959', name: 'チアガール' },
+  { id: '3005', name: 'チャイナドレス' },
+  { id: '2019', name: 'ツンデレ' },
+  { id: '6941', name: 'ディルド' },
+  { id: '5073', name: 'デカチン・巨根' },
+  { id: '6956', name: 'デート' },
+  { id: '4006', name: 'ナンパ' },
+  { id: '4015', name: 'ニューハーフ' },
+  { id: '94', name: 'ニーソックス' },
+  { id: '64', name: 'ネコミミ・獣系' },
+  { id: '6964', name: 'ノーパン' },
+  { id: '6972', name: 'ノーブラ' },
+  { id: '5006', name: 'バイブ' },
+  { id: '1012', name: 'バスガイド' },
+  { id: '4016', name: 'パンチラ' },
+  { id: '6939', name: 'ビジネススーツ' },
+  { id: '6164', name: 'ビッチ' },
+  { id: '17', name: 'ファンタジー' },
+  { id: '4139', name: 'ファン感謝・訪問' },
+  { id: '88', name: 'フィスト' },
+  { id: '18', name: 'ホラー' },
+  { id: '3013', name: 'ボディコン' },
+  { id: '6108', name: 'ポルチオ' },
+  { id: '6960', name: 'ママ友' },
+  { id: '1009', name: 'モデル' },
+  { id: '6933', name: 'ヨガ' },
+  { id: '569', name: 'ラブコメ' },
+  { id: '4040', name: 'レズ' },
+  { id: '5062', name: 'レズキス' },
+  { id: '4013', name: 'レズビアン' },
+  { id: '1011', name: 'レースクイーン' },
+  { id: '5057', name: 'ローション・オイル' },
+  { id: '5018', name: 'ローター' },
+  { id: '6943', name: '叔母さん' },
+  { id: '6942', name: '受付嬢' },
+  { id: '6945', name: '女上司' },
+  { id: '1015', name: '女医' },
+  { id: '1017', name: '女子アナ' },
+  { id: '1018', name: '女子校生' },
+  { id: '35', name: '女性向け' },
+  { id: '1082', name: '女戦士' },
+  { id: '2022', name: '女捜査官' },
+  { id: '6944', name: '女王様' },
+  { id: '3036', name: '女装・男の娘' },
+  { id: '4028', name: '妄想' },
+  { id: '1029', name: '妊婦' },
+  { id: '96', name: '孕ませ' },
+  { id: '4011', name: '尻フェチ' },
+  { id: '4017', name: '局部アップ' },
+  { id: '4009', name: '巨乳フェチ' },
+  { id: '63', name: '巫女' },
+  { id: '1083', name: '幼なじみ' },
+  { id: '95', name: '性転換・女体化' },
+  { id: '555', name: '恋愛' },
+  { id: '5004', name: '手コキ' },
+  { id: '5059', name: '拷問' },
+  { id: '5053', name: '指マン' },
+  { id: '5011', name: '放尿・お漏らし' },
+  { id: '2023', name: '日焼け' },
+  { id: '5070', name: '時間停止' },
+  { id: '1021', name: '格闘家' },
+  { id: '5060', name: '母乳' },
+  { id: '5075', name: '汗だく' },
+  { id: '5014', name: '浣腸' },
+  { id: '6948', name: '男の潮吹き' },
+  { id: '72', name: '異物挿入' },
+  { id: '2012', name: '白人女優' },
+  { id: '4116', name: '着エロ' },
+  { id: '1023', name: '秘書' },
+  { id: '97', name: '筋肉' },
+  { id: '5021', name: '縛り・緊縛' },
+  { id: '1026', name: '職業色々' },
+  { id: '6974', name: '花嫁' },
+  { id: '1020', name: '若妻・幼妻' },
+  { id: '6953', name: '蝋燭' },
+  { id: '93', name: '裸エプロン' },
+  { id: '62', name: '触手' },
+  { id: '5048', name: '足コキ' },
+  { id: '6935', name: '軟体' },
+  { id: '27', name: '辱め' },
+  { id: '4120', name: '逆ナン' },
+  { id: '4020', name: '野外・露出' },
+  { id: '5066', name: '電マ' },
+  { id: '6936', name: '面接' },
+  { id: '5012', name: '飲尿' },
+  { id: '1086', name: '魔法少女' },
+  { id: '1028', name: '黒人男優' },
+]
 const GENRE_NAME_MAP: Record<string, string> = Object.fromEntries(
-  POPULAR_GENRES.flatMap(cat => cat.genres.map(g => [g.id, g.name]))
+  [...POPULAR_GENRES.flatMap(cat => cat.genres), ...OTHER_GENRES].map(g => [g.id, g.name])
 )
 
 const PER_PAGE = 20
@@ -164,6 +289,7 @@ export default function GenreSearchPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'date' | 'rank'>('date')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [showOtherGenres, setShowOtherGenres] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
 
   const toggleCategory = (category: string) => {
@@ -396,7 +522,93 @@ export default function GenreSearchPage() {
               </div>
             )
           })}
+          {/* その他（五十音順・折り畳み） */}
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={() => setShowOtherGenres(prev => !prev)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: 'none', border: 'none', cursor: 'pointer', padding: '0',
+                marginBottom: showOtherGenres ? '8px' : '0',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                その他（五十音順）
+              </div>
+              <div style={{ fontSize: '11px', color: '#FD297B', fontWeight: '700' }}>
+                {showOtherGenres ? '▲ 閉じる' : `▼ 全${OTHER_GENRES.length}件`}
+              </div>
+            </button>
+            {showOtherGenres && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {OTHER_GENRES.map(genre => (
+                  <button
+                    key={genre.id}
+                    onClick={() => toggleGenre(genre.id)}
+                    style={{
+                      padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                      background: selectedGenres.includes(genre.id) ? '#FD297B' : 'var(--card)',
+                      color: selectedGenres.includes(genre.id) ? '#fff' : 'var(--text)',
+                      border: selectedGenres.includes(genre.id) ? 'none' : '1.5px solid var(--border)',
+                      boxShadow: selectedGenres.includes(genre.id) ? '0 4px 12px rgba(253,41,123,0.3)' : '0 2px 6px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    {genre.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* 選択中ジャンル表示 */}
+        {selectedGenres.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--subtext)', fontWeight: '600', marginBottom: '8px' }}>
+              選択中のジャンル
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {selectedGenres.map(gId => (
+                <div
+                  key={gId}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '5px 10px 5px 14px', borderRadius: '20px',
+                    background: '#FD297B', color: '#fff',
+                    fontSize: '13px', fontWeight: '600',
+                  }}
+                >
+                  {GENRE_NAME_MAP[gId] ?? gId}
+                  <button
+                    onClick={() => toggleGenre(gId)}
+                    style={{
+                      background: 'rgba(255,255,255,0.3)', border: 'none',
+                      borderRadius: '50%', width: '18px', height: '18px',
+                      cursor: 'pointer', color: '#fff', fontSize: '11px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {selectedGenres.length > 1 && (
+                <button
+                  onClick={() => setSelectedGenres([])}
+                  style={{
+                    padding: '5px 14px', borderRadius: '20px',
+                    background: 'transparent', color: 'var(--subtext)',
+                    border: '1.5px solid var(--border)', fontSize: '12px',
+                    fontWeight: '600', cursor: 'pointer',
+                  }}
+                >
+                  全て解除
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         <button
           onClick={search}
