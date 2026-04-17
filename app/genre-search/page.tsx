@@ -129,11 +129,10 @@ export default function GenreSearchPage() {
     setWorks([])
 
     const selectedFavorites = favorites.filter(f => selectedActresses.includes(f.actress_id))
-    const actressNames = selectedFavorites.map(f => f.actress_name)
     const genreIds = selectedGenres.join(',')
 
     // 女優が選ばれてない場合はジャンルのみで検索
-    if (actressNames.length === 0) {
+    if (selectedFavorites.length === 0) {
       const res = await fetch(`/api/dmm?genre=${genreIds}&hits=20&sort=rank`)
       const data = await res.json()
       setWorks(data.result?.items ?? [])
@@ -141,10 +140,10 @@ export default function GenreSearchPage() {
       return
     }
 
-    // 女優×ジャンルで並列検索
+    // 女優ID×ジャンルで並列検索
     const results = await Promise.all(
-      actressNames.map(name =>
-        fetch(`/api/dmm?actress=${encodeURIComponent(name)}&genre=${genreIds}&hits=10&sort=rank`)
+      selectedFavorites.map(f =>
+        fetch(`/api/dmm?actress_id=${f.actress_id}&genre=${genreIds}&hits=10&sort=rank`)
           .then(r => r.json())
           .then(data => data.result?.items ?? [])
       )
@@ -335,3 +334,4 @@ export default function GenreSearchPage() {
     </>
   )
 }
+

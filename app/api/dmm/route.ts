@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
 
   const keyword = searchParams.get('keyword') ?? ''
   const actress = searchParams.get('actress') ?? ''
+  const actressId = searchParams.get('actress_id') ?? ''
+  const genre = searchParams.get('genre') ?? ''
   const sort = searchParams.get('sort') ?? 'rank'
   const hits = searchParams.get('hits') ?? '10'
   const offset = searchParams.get('offset') ?? '1'
@@ -27,7 +29,10 @@ export async function GET(request: NextRequest) {
 
   if (keyword) params.set('keyword', keyword)
   if (actress) params.set('keyword', actress)
-  const genre = searchParams.get('genre') ?? ''
+  if (actressId) {
+    params.set('article', 'actress')
+    params.set('article_id', actressId)
+  }
   if (genre) params.set('genre', genre)
 
   const url = `https://api.dmm.com/affiliate/v3/ItemList?${params.toString()}`
