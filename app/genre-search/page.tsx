@@ -157,7 +157,7 @@ export default function GenreSearchPage() {
       let allItems = firstItems
       if (baseTotal > 100) {
         const offsets: number[] = []
-        for (let i = 101; i <= Math.min(baseTotal, 2000); i += 100) offsets.push(i)
+        for (let i = 101; i <= Math.min(baseTotal, 5000); i += 100) offsets.push(i)
         const rest = await Promise.all(
           offsets.map(offset =>
             fetch(`/api/dmm?genre=${baseGenre}&hits=100&sort=rank&offset=${offset}`)
@@ -476,6 +476,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
