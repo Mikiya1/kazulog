@@ -12,11 +12,6 @@ type Favorite = {
   actress_image: string
 }
 
-type Genre = {
-  genre_id: string
-  name: string
-}
-
 type Work = {
   content_id: string
   title: string
@@ -30,7 +25,6 @@ type Work = {
   }
 }
 
-// よく使うジャンルを厳選
 const POPULAR_GENRES: { category: string; genres: { id: string; name: string }[] }[] = [
   {
     category: '体型・外見',
@@ -86,6 +80,8 @@ const POPULAR_GENRES: { category: string; genres: { id: string; name: string }[]
   },
 ]
 
+const PER_PAGE = 50
+
 export default function GenreSearchPage() {
   const router = useRouter()
   const [favorites, setFavorites] = useState<Favorite[]>([])
@@ -97,8 +93,7 @@ export default function GenreSearchPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [partialResults, setPartialResults] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortOrder, setSortOrder] = useState<"date" | "rank">("date")
-  const PER_PAGE = 50
+  const [sortOrder, setSortOrder] = useState<'date' | 'rank'>('date')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -141,16 +136,14 @@ export default function GenreSearchPage() {
     const selectedFavorites = favorites.filter(f => selectedActresses.includes(f.actress_id))
     const genreIds = selectedGenres.join(',')
 
-    // 女優が選ばれてない場合はジャンルのみで検索
     if (selectedFavorites.length === 0) {
-      const res = await fetch(`/api/dmm?genre=${genreIds}&hits=20&sort=rank`)
+      const res = await fetch(`/api/dmm?genre=${genreIds}&hits=50&sort=rank`)
       const data = await res.json()
       setWorks(data.result?.items ?? [])
       setLoading(false)
       return
     }
 
-    // 女優ごとに全作品取得（最大1000件）してジャンルフィルタリング
     const MAX_WORKS = 1000
     const partial: string[] = []
 
@@ -159,17 +152,15 @@ export default function GenreSearchPage() {
       const firstData = await firstRes.json()
       const total = Number(firstData.result?.total_count ?? 0)
       const firstItems = firstData.result?.items ?? []
-      if (total > MAX_WORKS) {
-        partial.push(actressName)
-      }
+      if (total > MAX_WORKS) partial.push(actressName)
       if (total <= 100) return firstItems
-      const offsets = []
+      const offsets: number[] = []
       for (let i = 101; i <= Math.min(total, MAX_WORKS); i += 100) offsets.push(i)
       const rest = await Promise.all(
         offsets.map(offset =>
           fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=${offset}`)
             .then(r => r.json())
-            .then(data => data.result?.items ?? [])
+            .then(d => d.result?.items ?? [])
         )
       )
       return [...firstItems, ...rest.flat()]
@@ -179,11 +170,9 @@ export default function GenreSearchPage() {
       selectedFavorites.map(f => fetchAllWorksForActress(f.actress_id, f.actress_name))
     )
     const merged = results.flat()
-    // 重複除去
     const unique = merged.filter((w: Work, i: number, arr: Work[]) =>
       arr.findIndex((b: Work) => b.content_id === w.content_id) === i
     )
-    // 選択したジャンルを全て含む作品のみ表示
     const filtered = unique.filter((w: Work) => {
       const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
       return selectedGenres.every(gId => workGenreIds.includes(gId))
@@ -193,6 +182,15 @@ export default function GenreSearchPage() {
     setLoading(false)
   }
 
+  const sortedWorks = [...works].sort((a, b) => {
+    if (sortOrder === 'date') {
+      return new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
+    }
+    return 0
+  })
+  const totalPages = Math.ceil(sortedWorks.length / PER_PAGE)
+  const pagedWorks = sortedWorks.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+
   return (
     <>
       <Header />
@@ -201,7 +199,6 @@ export default function GenreSearchPage() {
         <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '6px' }}>ジャンル検索 🔍</h2>
         <p style={{ fontSize: '13px', color: 'var(--subtext)', marginBottom: '24px' }}>ジャンルを選んで好みの作品を探そう</p>
 
-        {/* お気に入り女優選択 */}
         {user && favorites.length > 0 && (
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', marginBottom: '12px' }}>
@@ -245,7 +242,6 @@ export default function GenreSearchPage() {
           </div>
         )}
 
-        {/* ジャンル選択 */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', marginBottom: '12px' }}>
             🏷️ ジャンルを選ぶ
@@ -276,7 +272,6 @@ export default function GenreSearchPage() {
           ))}
         </div>
 
-        {/* 検索ボタン */}
         <button
           onClick={search}
           disabled={loading || selectedGenres.length === 0}
@@ -289,17 +284,15 @@ export default function GenreSearchPage() {
             marginBottom: '32px',
           }}
         >
-          {loading ? '検索中...' : `この条件で検索 🔍`}
+          {loading ? '検索中...' : 'この条件で検索 🔍'}
         </button>
 
-        {/* 検索結果 */}
         {searched && !loading && (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)' }}>
                 検索結果 {works.length}件
               </div>
-              {/* ソート切り替え */}
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   onClick={() => { setSortOrder('date'); setCurrentPage(1) }}
@@ -325,6 +318,7 @@ export default function GenreSearchPage() {
                 </button>
               </div>
             </div>
+
             {partialResults.length > 0 && (
               <div style={{
                 background: '#FFF3CD', border: '1px solid #FFEAA7',
@@ -334,115 +328,104 @@ export default function GenreSearchPage() {
                 ⚠️ {partialResults.join('・')} は作品数が多いため一部のみ表示しています
               </div>
             )}
+
             {works.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--subtext)' }}>
                 条件に合う作品が見つかりませんでした
               </div>
-            ) : (() => {
-                // ソート
-                const sorted = [...works].sort((a, b) => {
-                  if (sortOrder === 'date') {
-                    return new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
-                  }
-                  return 0 // rankはAPIから取得済みの順序を維持
-                })
-                const totalPages = Math.ceil(sorted.length / PER_PAGE)
-                const paged = sorted.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
-                return (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-                      {paged.map((work, i) => (
-                        <div
-                          key={work.content_id}
-                          style={{
-                            background: 'var(--card)', borderRadius: '20px', overflow: 'hidden',
-                            boxShadow: i === 0 && currentPage === 1 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
-                            border: i === 0 && currentPage === 1 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
-                            position: 'relative',
-                          }}
-                        >
-                          {i === 0 && currentPage === 1 && (
-                            <div style={{
-                              position: 'absolute', top: '12px', left: '12px', zIndex: 2,
-                              background: 'var(--gradient)', color: '#fff',
-                              fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
-                              fontWeight: '700', boxShadow: 'var(--shadow-btn)',
-                            }}>
-                              {sortOrder === 'date' ? '🆕 LATEST' : '💖 BEST MATCH'}
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                            <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
-                              <Image
-                                src={work.imageURL?.small ?? ''}
-                                alt={work.title}
-                                fill
-                                style={{ objectFit: 'cover' }}
-                                unoptimized
-                              />
-                            </div>
-                            <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
-                              <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 && currentPage === 1 ? '18px' : 0 }}>
-                                {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
-                              </div>
-                              <div style={{
-                                fontSize: '13px', marginTop: '6px', fontWeight: '700',
-                                background: 'var(--gradient)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text',
-                              } as React.CSSProperties}>
-                                {work.prices?.price}
-                              </div>
-                              <button
-                                onClick={() => window.open(work.affiliateURL, '_blank')}
-                                style={{
-                                  marginTop: '10px', background: 'var(--gradient)',
-                                  color: '#fff', border: 'none', borderRadius: '20px',
-                                  padding: '7px 16px', fontSize: '12px', fontWeight: '700',
-                                  cursor: 'pointer', boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
-                                }}
-                              >
-                                作品を見る →
-                              </button>
-                            </div>
-                          </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+                  {pagedWorks.map((work, i) => (
+                    <div
+                      key={work.content_id}
+                      style={{
+                        background: 'var(--card)', borderRadius: '20px', overflow: 'hidden',
+                        boxShadow: i === 0 && currentPage === 1 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
+                        border: i === 0 && currentPage === 1 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
+                        position: 'relative',
+                      }}
+                    >
+                      {i === 0 && currentPage === 1 && (
+                        <div style={{
+                          position: 'absolute', top: '12px', left: '12px', zIndex: 2,
+                          background: 'var(--gradient)', color: '#fff',
+                          fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
+                          fontWeight: '700', boxShadow: 'var(--shadow-btn)',
+                        }}>
+                          {sortOrder === 'date' ? '🆕 LATEST' : '💖 BEST MATCH'}
                         </div>
-                      ))}
-                    </div>
-                    {/* ページネーション */}
-                    {totalPages > 1 && (
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
-                        <button
-                          onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0) }}
-                          disabled={currentPage === 1}
-                          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
-                        >←</button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                          .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                          .reduce((acc: (number|string)[], p, idx, arr) => {
-                            if (idx > 0 && p - (arr[idx-1] as number) > 1) acc.push('...')
-                            acc.push(p)
-                            return acc
-                          }, [])
-                          .map((p, i) => (
-                            <button
-                              key={i}
-                              onClick={() => { if (typeof p === 'number') { setCurrentPage(p); window.scrollTo(0, 0) } }}
-                              style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: p === '...' ? 'default' : 'pointer', background: p === currentPage ? '#FD297B' : 'var(--card)', color: p === currentPage ? '#fff' : 'var(--text)', border: p === currentPage ? 'none' : '1.5px solid var(--border)' }}
-                            >{p}</button>
-                          ))
-                        }
-                        <button
-                          onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0) }}
-                          disabled={currentPage === totalPages}
-                          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
-                        >→</button>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                        <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
+                          <Image
+                            src={work.imageURL?.small ?? ''}
+                            alt={work.title}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            unoptimized
+                          />
+                        </div>
+                        <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 && currentPage === 1 ? '18px' : 0 }}>
+                            {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
+                          </div>
+                          <div style={{
+                            fontSize: '13px', marginTop: '6px', fontWeight: '700',
+                            background: 'var(--gradient)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          } as React.CSSProperties}>
+                            {work.prices?.price}
+                          </div>
+                          <button
+                            onClick={() => window.open(work.affiliateURL, '_blank')}
+                            style={{
+                              marginTop: '10px', background: 'var(--gradient)',
+                              color: '#fff', border: 'none', borderRadius: '20px',
+                              padding: '7px 16px', fontSize: '12px', fontWeight: '700',
+                              cursor: 'pointer', boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
+                            }}
+                          >
+                            作品を見る →
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </>
-                )
-              })()}
+                    </div>
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
+                    <button
+                      onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0) }}
+                      disabled={currentPage === 1}
+                      style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
+                    >←</button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                      .reduce((acc: (number | string)[], p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...')
+                        acc.push(p)
+                        return acc
+                      }, [])
+                      .map((p, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); window.scrollTo(0, 0) } }}
+                          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: p === '...' ? 'default' : 'pointer', background: p === currentPage ? '#FD297B' : 'var(--card)', color: p === currentPage ? '#fff' : 'var(--text)', border: p === currentPage ? 'none' : '1.5px solid var(--border)' }}
+                        >{p}</button>
+                      ))
+                    }
+                    <button
+                      onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0) }}
+                      disabled={currentPage === totalPages}
+                      style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
+                    >→</button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -451,16 +434,3 @@ export default function GenreSearchPage() {
     </>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
