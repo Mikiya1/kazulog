@@ -419,7 +419,7 @@ export default function GenreSearchPage() {
                       type='number'
                       min={1}
                       max={totalPages}
-                      placeholder='ページ'
+                      placeholder='P'
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           const v = parseInt((e.target as HTMLInputElement).value)
@@ -427,7 +427,7 @@ export default function GenreSearchPage() {
                           ;(e.target as HTMLInputElement).value = ''
                         }
                       }}
-                      style={{ width: '80px', height: '38px', padding: '0 12px', borderRadius: '20px', border: '1.5px solid var(--border)', background: 'var(--card)', fontSize: '14px', fontWeight: '600', color: 'var(--text)', textAlign: 'center', outline: 'none' }}
+                      style={{ width: '60px', height: '34px', padding: '0 8px', borderRadius: '20px', border: '1.5px solid var(--border)', background: 'var(--card)', fontSize: '13px', fontWeight: '600', color: 'var(--text)', textAlign: 'center', outline: 'none' }}
                     />
                   </div>
                 )}
@@ -440,6 +440,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
