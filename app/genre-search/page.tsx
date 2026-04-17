@@ -415,20 +415,23 @@ export default function GenreSearchPage() {
                       disabled={currentPage === totalPages}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >→</button>
-                    <input
-                      type='number'
-                      min={1}
-                      max={totalPages}
-                      placeholder='P'
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const v = parseInt((e.target as HTMLInputElement).value)
-                          if (v >= 1 && v <= totalPages) { setCurrentPage(v); window.scrollTo(0, 0) }
-                          ;(e.target as HTMLInputElement).value = ''
-                        }
-                      }}
-                      style={{ width: '60px', height: '34px', padding: '0 8px', borderRadius: '20px', border: '1.5px solid var(--border)', background: 'var(--card)', fontSize: '13px', fontWeight: '600', color: 'var(--text)', textAlign: 'center', outline: 'none' }}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: '20px', padding: '0 12px', height: '34px', gap: '4px' }}>
+                      <input
+                        type='number'
+                        min={1}
+                        max={totalPages}
+                        defaultValue={currentPage}
+                        key={currentPage}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const v = parseInt((e.target as HTMLInputElement).value)
+                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); window.scrollTo(0, 0) }
+                          }
+                        }}
+                        style={{ width: '32px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '700', color: 'var(--text)', textAlign: 'center', outline: 'none', padding: 0 }}
+                      />
+                      <span style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '500' }}>/ {totalPages}</span>
+                    </div>
                   </div>
                 )}
               </>
@@ -440,6 +443,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
