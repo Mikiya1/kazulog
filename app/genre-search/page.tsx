@@ -80,7 +80,7 @@ const POPULAR_GENRES: { category: string; genres: { id: string; name: string }[]
   },
 ]
 
-const PER_PAGE = 50
+const PER_PAGE = 20
 
 export default function GenreSearchPage() {
   const router = useRouter()
@@ -353,7 +353,7 @@ export default function GenreSearchPage() {
                           fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
                           fontWeight: '700', boxShadow: 'var(--shadow-btn)',
                         }}>
-                          {sortOrder === 'date' ? '🆕 LATEST' : '💖 BEST MATCH'}
+                          {sortOrder === 'date' ? '🆕 LATEST' : '🏆 BEST SELLER'}
                         </div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'stretch' }}>
