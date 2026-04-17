@@ -141,13 +141,29 @@ export default function GenreSearchPage() {
       return
     }
 
-    // 女優の作品を取得してフロントでジャンルフィルタリング
-    const results = await Promise.all(
-      selectedFavorites.map(f =>
-        fetch(`/api/dmm?actress_id=${f.actress_id}&hits=100&sort=rank`)
-          .then(r => r.json())
-          .then(data => data.result?.items ?? [])
+    // 女優の全作品を複数ページで取得
+    const fetchAllWorks = async (actressId: string) => {
+      // まず総件数を確認
+      const firstRes = await fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=1`)
+      const firstData = await firstRes.json()
+      const total = Number(firstData.result?.total_count ?? 0)
+      const firstItems = firstData.result?.items ?? []
+      if (total <= 100) return firstItems
+      // 残りのページを取得
+      const offsets = []
+      for (let i = 101; i <= Math.min(total, 500); i += 100) offsets.push(i)
+      const rest = await Promise.all(
+        offsets.map(offset =>
+          fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=${offset}`)
+            .then(r => r.json())
+            .then(data => data.result?.items ?? [])
+        )
       )
+      return [...firstItems, ...rest.flat()]
+    }
+
+    const results = await Promise.all(
+      selectedFavorites.map(f => fetchAllWorks(f.actress_id))
     )
     const merged = results.flat()
     // 重複除去
@@ -341,6 +357,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
