@@ -138,9 +138,31 @@ export default function GenreSearchPage() {
     const genreIds = selectedGenres.join(',')
 
     if (selectedFavorites.length === 0) {
-      const res = await fetch(`/api/dmm?genre=${genreIds}&hits=50&sort=rank`)
-      const data = await res.json()
-      setWorks(data.result?.items ?? [])
+      // 複数ジャンル選択時は最初のジャンルで大量取得してフロントでフィルタリング
+      const firstGenre = selectedGenres[0]
+      const firstRes = await fetch(`/api/dmm?genre=${firstGenre}&hits=100&sort=rank&offset=1`)
+      const firstData = await firstRes.json()
+      const total = Number(firstData.result?.total_count ?? 0)
+      const firstItems = firstData.result?.items ?? []
+      let allItems = firstItems
+      if (total > 100) {
+        const offsets: number[] = []
+        for (let i = 101; i <= Math.min(total, 500); i += 100) offsets.push(i)
+        const rest = await Promise.all(
+          offsets.map(offset =>
+            fetch(`/api/dmm?genre=${firstGenre}&hits=100&sort=rank&offset=${offset}`)
+              .then(r => r.json())
+              .then(d => d.result?.items ?? [])
+          )
+        )
+        allItems = [...firstItems, ...rest.flat()]
+      }
+      // 複数ジャンルを全て含む作品のみ表示
+      const filtered = allItems.filter((w: Work) => {
+        const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+        return selectedGenres.every(gId => workGenreIds.includes(gId))
+      })
+      setWorks(filtered)
       setLoading(false)
       return
     }
@@ -444,6 +466,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
