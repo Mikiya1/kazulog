@@ -94,6 +94,7 @@ export default function GenreSearchPage() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [user, setUser] = useState<{ id: string } | null>(null)
+  const [partialResults, setPartialResults] = useState<string[]>([])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -144,18 +145,24 @@ export default function GenreSearchPage() {
       return
     }
 
-    // ジャンルで先に絞り込み、複数ページ取得
-    const fetchByGenre = async () => {
-      const firstRes = await fetch(`/api/dmm?genre=${genreIds}&hits=100&sort=rank&offset=1`)
+    // 女優ごとに全作品取得（最大1000件）してジャンルフィルタリング
+    const MAX_WORKS = 1000
+    const partial: string[] = []
+
+    const fetchAllWorksForActress = async (actressId: string, actressName: string) => {
+      const firstRes = await fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=1`)
       const firstData = await firstRes.json()
       const total = Number(firstData.result?.total_count ?? 0)
       const firstItems = firstData.result?.items ?? []
+      if (total > MAX_WORKS) {
+        partial.push(actressName)
+      }
       if (total <= 100) return firstItems
       const offsets = []
-      for (let i = 101; i <= Math.min(total, 500); i += 100) offsets.push(i)
+      for (let i = 101; i <= Math.min(total, MAX_WORKS); i += 100) offsets.push(i)
       const rest = await Promise.all(
         offsets.map(offset =>
-          fetch(`/api/dmm?genre=${genreIds}&hits=100&sort=rank&offset=${offset}`)
+          fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=${offset}`)
             .then(r => r.json())
             .then(data => data.result?.items ?? [])
         )
@@ -163,14 +170,20 @@ export default function GenreSearchPage() {
       return [...firstItems, ...rest.flat()]
     }
 
-    const allWorks = await fetchByGenre()
-
-    // 選択した女優が出演している作品のみ表示
-    const selectedActressIds = selectedFavorites.map(f => f.actress_id)
-    const filtered = allWorks.filter((w: Work) => {
-      const workActressIds = (w.iteminfo?.actress ?? []).map((a: { id: number }) => String(a.id))
-      return selectedActressIds.some(aid => workActressIds.includes(aid))
+    const results = await Promise.all(
+      selectedFavorites.map(f => fetchAllWorksForActress(f.actress_id, f.actress_name))
+    )
+    const merged = results.flat()
+    // 重複除去
+    const unique = merged.filter((w: Work, i: number, arr: Work[]) =>
+      arr.findIndex((b: Work) => b.content_id === w.content_id) === i
+    )
+    // 選択したジャンルを全て含む作品のみ表示
+    const filtered = unique.filter((w: Work) => {
+      const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+      return selectedGenres.every(gId => workGenreIds.includes(gId))
     })
+    setPartialResults(partial)
     setWorks(filtered)
     setLoading(false)
   }
@@ -277,9 +290,18 @@ export default function GenreSearchPage() {
         {/* 検索結果 */}
         {searched && !loading && (
           <>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', marginBottom: '16px' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px' }}>
               検索結果 {works.length}件
             </div>
+            {partialResults.length > 0 && (
+              <div style={{
+                background: '#FFF3CD', border: '1px solid #FFEAA7',
+                borderRadius: '12px', padding: '10px 14px',
+                fontSize: '12px', color: '#856404', marginBottom: '16px',
+              }}>
+                ⚠️ {partialResults.join('・')} は作品数が多いため一部のみ表示しています
+              </div>
+            )}
             {works.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--subtext)' }}>
                 条件に合う作品が見つかりませんでした
@@ -353,6 +375,8 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
+
 
 
 
