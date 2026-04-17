@@ -163,7 +163,17 @@ export default function GenreSearchPage() {
   const [partialResults, setPartialResults] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'date' | 'rank'>('date')
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const resultsRef = useRef<HTMLDivElement>(null)
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(category)) next.delete(category)
+      else next.add(category)
+      return next
+    })
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -340,30 +350,52 @@ export default function GenreSearchPage() {
           <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', marginBottom: '12px' }}>
             🏷️ ジャンルを選ぶ
           </div>
-          {POPULAR_GENRES.map(cat => (
-            <div key={cat.category} style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '0.5px', marginBottom: '8px', textTransform: 'uppercase' }}>
-                {cat.category}
+          {POPULAR_GENRES.map(cat => {
+            const ROWS = 2
+            const PER_ROW = 4
+            const PREVIEW = ROWS * PER_ROW
+            const isExpanded = expandedCategories.has(cat.category)
+            const visibleGenres = isExpanded ? cat.genres : cat.genres.slice(0, PREVIEW)
+            const hasMore = cat.genres.length > PREVIEW
+            return (
+              <div key={cat.category} style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '0.5px', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  {cat.category}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {visibleGenres.map(genre => (
+                    <button
+                      key={genre.id}
+                      onClick={() => toggleGenre(genre.id)}
+                      style={{
+                        padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                        background: selectedGenres.includes(genre.id) ? '#FD297B' : 'var(--card)',
+                        color: selectedGenres.includes(genre.id) ? '#fff' : 'var(--text)',
+                        border: selectedGenres.includes(genre.id) ? 'none' : '1.5px solid var(--border)',
+                        boxShadow: selectedGenres.includes(genre.id) ? '0 4px 12px rgba(253,41,123,0.3)' : '0 2px 6px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      {genre.name}
+                    </button>
+                  ))}
+                  {hasMore && (
+                    <button
+                      onClick={() => toggleCategory(cat.category)}
+                      style={{
+                        padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                        background: 'transparent',
+                        color: '#FD297B',
+                        border: '1.5px dashed #FD297B88',
+                        boxShadow: 'none',
+                      }}
+                    >
+                      {isExpanded ? '閉じる ▲' : `もっと見る +${cat.genres.length - PREVIEW}`}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {cat.genres.map(genre => (
-                  <button
-                    key={genre.id}
-                    onClick={() => toggleGenre(genre.id)}
-                    style={{
-                      padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                      background: selectedGenres.includes(genre.id) ? '#FD297B' : 'var(--card)',
-                      color: selectedGenres.includes(genre.id) ? '#fff' : 'var(--text)',
-                      border: selectedGenres.includes(genre.id) ? 'none' : '1.5px solid var(--border)',
-                      boxShadow: selectedGenres.includes(genre.id) ? '0 4px 12px rgba(253,41,123,0.3)' : '0 2px 6px rgba(0,0,0,0.06)',
-                    }}
-                  >
-                    {genre.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <button

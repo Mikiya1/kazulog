@@ -138,43 +138,37 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ジャンルから探す */}
+        {/* ジャンル検索バナー */}
         <div style={{ padding: '28px 20px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              ジャンルから探す
+          <button
+            onClick={() => router.push('/genre-search')}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #FD297B22, #FF655B11)',
+              border: '1px solid rgba(253,41,123,0.25)',
+              borderRadius: '20px',
+              padding: '20px',
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text)', marginBottom: '4px' }}>
+                お気に入り女優 × ジャンルで
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#FD297B' }}>
+                お好みの作品を探す ♡
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--subtext)', marginTop: '6px' }}>
+                好きな女優とジャンルを組み合わせて検索
+              </div>
             </div>
-            <button
-              onClick={() => router.push('/genre-search')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: '#FD297B' }}
-            >
-              もっと見る →
-            </button>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {[
-              '巨乳', '素人', 'スレンダー', '人妻', '熟女',
-              '痴女', 'ギャル', '中出し', '潮吹き', '企画',
-              '騎乗位', 'ハメ撮り', 'NTR', 'パイパン', '美少女',
-            ].map(tag => (
-              <button
-                key={tag}
-                onClick={() => router.push('/genre-search')}
-                style={{
-                  background: 'var(--card)',
-                  border: '1px solid rgba(253,41,123,0.2)',
-                  borderRadius: '20px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: 'var(--text)',
-                  cursor: 'pointer',
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+            <div style={{ fontSize: '28px', flexShrink: 0 }}>🔍</div>
+          </button>
         </div>
 
         {/* 使い方 */}
