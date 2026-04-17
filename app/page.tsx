@@ -138,6 +138,45 @@ export default function Home() {
           </div>
         </div>
 
+        {/* ジャンルから探す */}
+        <div style={{ padding: '28px 20px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              ジャンルから探す
+            </div>
+            <button
+              onClick={() => router.push('/genre-search')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: '#FD297B' }}
+            >
+              もっと見る →
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {[
+              '巨乳', '素人', 'スレンダー', '人妻', '熟女',
+              '痴女', 'ギャル', '中出し', '潮吹き', '企画',
+              '騎乗位', 'ハメ撮り', 'NTR', 'パイパン', '美少女',
+            ].map(tag => (
+              <button
+                key={tag}
+                onClick={() => router.push('/genre-search')}
+                style={{
+                  background: 'var(--card)',
+                  border: '1px solid rgba(253,41,123,0.2)',
+                  borderRadius: '20px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* 使い方 */}
         <div style={{ padding: '28px 20px 0' }}>
           <div style={{ fontSize: '11px', color: 'var(--subtext)', marginBottom: '14px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>使い方</div>
