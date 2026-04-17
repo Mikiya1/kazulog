@@ -15,7 +15,16 @@ export async function GET(request: NextRequest) {
   const hits = searchParams.get('hits') ?? '10'
   const offset = searchParams.get('offset') ?? '1'
 
-  const params = new URLSearchParams({
+  const articles: { type: string; id: string }[] = []
+  if (actressId) articles.push({ type: 'actress', id: actressId })
+  if (genre) articles.push({ type: 'genre', id: genre })
+
+  // article配列を手動でURL文字列として構築（[]をエンコードしない）
+  const articleStr = articles.map((a, i) =>
+    `article[${i}]=${encodeURIComponent(a.type)}&article_id[${i}]=${encodeURIComponent(a.id)}`
+  ).join('&')
+
+  const baseParams = new URLSearchParams({
     api_id: API_ID!,
     affiliate_id: AFFILIATE_ID!,
     site: 'FANZA',
@@ -27,21 +36,15 @@ export async function GET(request: NextRequest) {
     output: 'json',
   })
 
-  if (keyword) params.set('keyword', keyword)
-  if (actress) params.set('keyword', actress)
-  if (actressId) {
-    params.set('article', 'actress')
-    params.set('article_id', actressId)
-  }
-  if (genre) params.set('genre', genre)
+  if (keyword) baseParams.set('keyword', keyword)
+  if (actress) baseParams.set('keyword', actress)
 
-  const url = `https://api.dmm.com/affiliate/v3/ItemList?${params.toString()}`
+  const url = `https://api.dmm.com/affiliate/v3/ItemList?${baseParams.toString()}${articleStr ? '&' + articleStr : ''}`
 
   try {
     const res = await fetch(url)
     const data = await res.json()
 
-    // affiliateURLをサイト用IDに差し替え
     if (data.result?.items) {
       data.result.items = data.result.items.map((item: { affiliateURL?: string }) => ({
         ...item,
