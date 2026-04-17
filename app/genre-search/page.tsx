@@ -415,6 +415,20 @@ export default function GenreSearchPage() {
                       disabled={currentPage === totalPages}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >→</button>
+                    <input
+                      type='number'
+                      min={1}
+                      max={totalPages}
+                      placeholder='ページ'
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const v = parseInt((e.target as HTMLInputElement).value)
+                          if (v >= 1 && v <= totalPages) { setCurrentPage(v); window.scrollTo(0, 0) }
+                          ;(e.target as HTMLInputElement).value = ''
+                        }
+                      }}
+                      style={{ width: '64px', padding: '6px 10px', borderRadius: '20px', border: '1.5px solid var(--border)', background: 'var(--card)', fontSize: '13px', color: 'var(--text)', textAlign: 'center', outline: 'none' }}
+                    />
                   </div>
                 )}
               </>
@@ -426,4 +440,5 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
