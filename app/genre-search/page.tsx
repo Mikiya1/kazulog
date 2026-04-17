@@ -145,6 +145,10 @@ const POPULAR_GENRES: { category: string; genres: { id: string; name: string }[]
   },
 ]
 
+const GENRE_NAME_MAP: Record<string, string> = Object.fromEntries(
+  POPULAR_GENRES.flatMap(cat => cat.genres.map(g => [g.id, g.name]))
+)
+
 const PER_PAGE = 20
 
 export default function GenreSearchPage() {
