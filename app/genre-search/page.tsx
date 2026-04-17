@@ -138,36 +138,26 @@ export default function GenreSearchPage() {
     const genreIds = selectedGenres.join(',')
 
     if (selectedFavorites.length === 0) {
-      // 各ジャンルの件数を確認して一番少ないジャンルを基準にする
-      const counts = await Promise.all(
-        selectedGenres.map(gId =>
-          fetch(`/api/dmm?genre=${gId}&hits=1&sort=rank`)
-            .then(r => r.json())
-            .then(d => ({ gId, total: Number(d.result?.total_count ?? 0) }))
-        )
-      )
-      const smallest = counts.sort((a, b) => a.total - b.total)[0]
-      const baseGenre = smallest.gId
-      const baseTotal = smallest.total
-
-      // 最小件数ジャンルで全件取得（最大2000件）
-      const firstRes = await fetch(`/api/dmm?genre=${baseGenre}&hits=100&sort=rank&offset=1`)
+      // ジャンル名をキーワードとして検索（スペース区切りでAND検索）
+      const keywords = selectedGenres.map(gId => GENRE_NAME_MAP[gId] ?? '').filter(Boolean).join(' ')
+      const firstRes = await fetch(`/api/dmm?keyword=${encodeURIComponent(keywords)}&hits=100&sort=rank&offset=1`)
       const firstData = await firstRes.json()
+      const total = Number(firstData.result?.total_count ?? 0)
       const firstItems = firstData.result?.items ?? []
       let allItems = firstItems
-      if (baseTotal > 100) {
+      if (total > 100) {
         const offsets: number[] = []
-        for (let i = 101; i <= Math.min(baseTotal, 5000); i += 100) offsets.push(i)
+        for (let i = 101; i <= Math.min(total, 1000); i += 100) offsets.push(i)
         const rest = await Promise.all(
           offsets.map(offset =>
-            fetch(`/api/dmm?genre=${baseGenre}&hits=100&sort=rank&offset=${offset}`)
+            fetch(`/api/dmm?keyword=${encodeURIComponent(keywords)}&hits=100&sort=rank&offset=${offset}`)
               .then(r => r.json())
               .then(d => d.result?.items ?? [])
           )
         )
         allItems = [...firstItems, ...rest.flat()]
       }
-      // 残りの全ジャンルを含む作品のみ表示
+      // ジャンルIDでフロントフィルタリング
       const filtered = allItems.filter((w: Work) => {
         const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
         return selectedGenres.every(gId => workGenreIds.includes(gId))
@@ -476,6 +466,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
