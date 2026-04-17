@@ -23,6 +23,7 @@ type Work = {
   affiliateURL: string
   imageURL: { large: string; small: string }
   prices?: { price: string }
+  date?: string
   iteminfo?: {
     genre?: { id: number; name: string }[]
     actress?: { id: number; name: string }[]
@@ -95,6 +96,9 @@ export default function GenreSearchPage() {
   const [searched, setSearched] = useState(false)
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [partialResults, setPartialResults] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortOrder, setSortOrder] = useState<"date" | "rank">("date")
+  const PER_PAGE = 50
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -132,6 +136,7 @@ export default function GenreSearchPage() {
     setLoading(true)
     setSearched(true)
     setWorks([])
+    setCurrentPage(1)
 
     const selectedFavorites = favorites.filter(f => selectedActresses.includes(f.actress_id))
     const genreIds = selectedGenres.join(',')
@@ -290,8 +295,35 @@ export default function GenreSearchPage() {
         {/* 検索結果 */}
         {searched && !loading && (
           <>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px' }}>
-              検索結果 {works.length}件
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)' }}>
+                検索結果 {works.length}件
+              </div>
+              {/* ソート切り替え */}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => { setSortOrder('date'); setCurrentPage(1) }}
+                  style={{
+                    padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                    background: sortOrder === 'date' ? '#FD297B' : 'var(--card)',
+                    color: sortOrder === 'date' ? '#fff' : 'var(--subtext)',
+                    border: sortOrder === 'date' ? 'none' : '1.5px solid var(--border)',
+                  }}
+                >
+                  発売日順
+                </button>
+                <button
+                  onClick={() => { setSortOrder('rank'); setCurrentPage(1) }}
+                  style={{
+                    padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                    background: sortOrder === 'rank' ? '#FD297B' : 'var(--card)',
+                    color: sortOrder === 'rank' ? '#fff' : 'var(--subtext)',
+                    border: sortOrder === 'rank' ? 'none' : '1.5px solid var(--border)',
+                  }}
+                >
+                  売り上げ順
+                </button>
+              </div>
             </div>
             {partialResults.length > 0 && (
               <div style={{
@@ -306,67 +338,111 @@ export default function GenreSearchPage() {
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--subtext)' }}>
                 条件に合う作品が見つかりませんでした
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {works.map((work, i) => (
-                  <div
-                    key={work.content_id}
-                    style={{
-                      background: 'var(--card)', borderRadius: '20px', overflow: 'hidden',
-                      boxShadow: i === 0 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
-                      border: i === 0 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
-                      position: 'relative',
-                    }}
-                  >
-                    {i === 0 && (
-                      <div style={{
-                        position: 'absolute', top: '12px', left: '12px', zIndex: 2,
-                        background: 'var(--gradient)', color: '#fff',
-                        fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
-                        fontWeight: '700', boxShadow: 'var(--shadow-btn)',
-                      }}>
-                        💖 BEST MATCH
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                      <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
-                        <Image
-                          src={work.imageURL?.small ?? ''}
-                          alt={work.title}
-                          fill
-                          style={{ objectFit: 'cover' }}
-                          unoptimized
-                        />
-                      </div>
-                      <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
-                          {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
-                        </div>
-                        <div style={{
-                          fontSize: '13px', marginTop: '6px', fontWeight: '700',
-                          background: 'var(--gradient)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        } as React.CSSProperties}>
-                          {work.prices?.price}
-                        </div>
-                        <button
-                          onClick={() => window.open(work.affiliateURL, '_blank')}
+            ) : (() => {
+                // ソート
+                const sorted = [...works].sort((a, b) => {
+                  if (sortOrder === 'date') {
+                    return new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
+                  }
+                  return 0 // rankはAPIから取得済みの順序を維持
+                })
+                const totalPages = Math.ceil(sorted.length / PER_PAGE)
+                const paged = sorted.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+                return (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+                      {paged.map((work, i) => (
+                        <div
+                          key={work.content_id}
                           style={{
-                            marginTop: '10px', background: 'var(--gradient)',
-                            color: '#fff', border: 'none', borderRadius: '20px',
-                            padding: '7px 16px', fontSize: '12px', fontWeight: '700',
-                            cursor: 'pointer', boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
+                            background: 'var(--card)', borderRadius: '20px', overflow: 'hidden',
+                            boxShadow: i === 0 && currentPage === 1 ? '0 8px 32px rgba(253,41,123,0.15)' : '0 2px 12px rgba(0,0,0,0.06)',
+                            border: i === 0 && currentPage === 1 ? '1.5px solid #FD297B44' : '1.5px solid transparent',
+                            position: 'relative',
                           }}
                         >
-                          作品を見る →
-                        </button>
-                      </div>
+                          {i === 0 && currentPage === 1 && (
+                            <div style={{
+                              position: 'absolute', top: '12px', left: '12px', zIndex: 2,
+                              background: 'var(--gradient)', color: '#fff',
+                              fontSize: '10px', padding: '4px 10px', borderRadius: '20px',
+                              fontWeight: '700', boxShadow: 'var(--shadow-btn)',
+                            }}>
+                              {sortOrder === 'date' ? '🆕 LATEST' : '💖 BEST MATCH'}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                            <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
+                              <Image
+                                src={work.imageURL?.small ?? ''}
+                                alt={work.title}
+                                fill
+                                style={{ objectFit: 'cover' }}
+                                unoptimized
+                              />
+                            </div>
+                            <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
+                              <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 && currentPage === 1 ? '18px' : 0 }}>
+                                {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
+                              </div>
+                              <div style={{
+                                fontSize: '13px', marginTop: '6px', fontWeight: '700',
+                                background: 'var(--gradient)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text',
+                              } as React.CSSProperties}>
+                                {work.prices?.price}
+                              </div>
+                              <button
+                                onClick={() => window.open(work.affiliateURL, '_blank')}
+                                style={{
+                                  marginTop: '10px', background: 'var(--gradient)',
+                                  color: '#fff', border: 'none', borderRadius: '20px',
+                                  padding: '7px 16px', fontSize: '12px', fontWeight: '700',
+                                  cursor: 'pointer', boxShadow: '0 4px 12px rgba(253,41,123,0.3)',
+                                }}
+                              >
+                                作品を見る →
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
+                    {/* ページネーション */}
+                    {totalPages > 1 && (
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
+                        <button
+                          onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0) }}
+                          disabled={currentPage === 1}
+                          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
+                        >←</button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                          .reduce((acc: (number|string)[], p, idx, arr) => {
+                            if (idx > 0 && p - (arr[idx-1] as number) > 1) acc.push('...')
+                            acc.push(p)
+                            return acc
+                          }, [])
+                          .map((p, i) => (
+                            <button
+                              key={i}
+                              onClick={() => { if (typeof p === 'number') { setCurrentPage(p); window.scrollTo(0, 0) } }}
+                              style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: p === '...' ? 'default' : 'pointer', background: p === currentPage ? '#FD297B' : 'var(--card)', color: p === currentPage ? '#fff' : 'var(--text)', border: p === currentPage ? 'none' : '1.5px solid var(--border)' }}
+                            >{p}</button>
+                          ))
+                        }
+                        <button
+                          onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0) }}
+                          disabled={currentPage === totalPages}
+                          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
+                        >→</button>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             )}
           </>
         )}
@@ -375,6 +451,11 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
+
+
+
+
 
 
 
