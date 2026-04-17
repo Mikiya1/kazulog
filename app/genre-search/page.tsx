@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
@@ -94,6 +94,7 @@ export default function GenreSearchPage() {
   const [partialResults, setPartialResults] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'date' | 'rank'>('date')
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -289,9 +290,9 @@ export default function GenreSearchPage() {
 
         {searched && !loading && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div ref={resultsRef} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)' }}>
-                検索結果 {works.length}件
+                検索結果 {works.length}件　{works.length > 0 && <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--subtext)' }}>（{currentPage}/{totalPages}ページ）</span>}
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
@@ -391,7 +392,7 @@ export default function GenreSearchPage() {
                 {totalPages > 1 && (
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
                     <button
-                      onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0) }}
+                      onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }}
                       disabled={currentPage === 1}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >←</button>
@@ -405,13 +406,13 @@ export default function GenreSearchPage() {
                       .map((p, i) => (
                         <button
                           key={i}
-                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); window.scrollTo(0, 0) } }}
+                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) } }}
                           style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: p === '...' ? 'default' : 'pointer', background: p === currentPage ? '#FD297B' : 'var(--card)', color: p === currentPage ? '#fff' : 'var(--text)', border: p === currentPage ? 'none' : '1.5px solid var(--border)' }}
                         >{p}</button>
                       ))
                     }
                     <button
-                      onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0) }}
+                      onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }}
                       disabled={currentPage === totalPages}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >→</button>
@@ -425,7 +426,7 @@ export default function GenreSearchPage() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             const v = parseInt((e.target as HTMLInputElement).value)
-                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); window.scrollTo(0, 0) }
+                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }
                           }
                         }}
                         style={{ width: '32px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '700', color: 'var(--text)', textAlign: 'center', outline: 'none', padding: 0 }}
@@ -443,6 +444,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
