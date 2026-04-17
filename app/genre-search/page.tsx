@@ -167,21 +167,20 @@ export default function GenreSearchPage() {
       return
     }
 
-    const MAX_WORKS = 1000
-    const partial: string[] = []
+    // 女優×ジャンルをAPIで直接絞り込み（複数ジャンルは最初のジャンルで絞り、残りはフロントでフィルタ）
+    const primaryGenre = selectedGenres[0]
 
-    const fetchAllWorksForActress = async (actressId: string, actressName: string) => {
-      const firstRes = await fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=1`)
+    const fetchWorksForActress = async (actressId: string) => {
+      const firstRes = await fetch(`/api/dmm?actress_id=${actressId}&genre=${primaryGenre}&hits=100&sort=rank&offset=1`)
       const firstData = await firstRes.json()
       const total = Number(firstData.result?.total_count ?? 0)
       const firstItems = firstData.result?.items ?? []
-      if (total > MAX_WORKS) partial.push(actressName)
       if (total <= 100) return firstItems
       const offsets: number[] = []
-      for (let i = 101; i <= Math.min(total, MAX_WORKS); i += 100) offsets.push(i)
+      for (let i = 101; i <= Math.min(total, 500); i += 100) offsets.push(i)
       const rest = await Promise.all(
         offsets.map(offset =>
-          fetch(`/api/dmm?actress_id=${actressId}&hits=100&sort=rank&offset=${offset}`)
+          fetch(`/api/dmm?actress_id=${actressId}&genre=${primaryGenre}&hits=100&sort=rank&offset=${offset}`)
             .then(r => r.json())
             .then(d => d.result?.items ?? [])
         )
@@ -190,17 +189,20 @@ export default function GenreSearchPage() {
     }
 
     const results = await Promise.all(
-      selectedFavorites.map(f => fetchAllWorksForActress(f.actress_id, f.actress_name))
+      selectedFavorites.map(f => fetchWorksForActress(f.actress_id))
     )
     const merged = results.flat()
     const unique = merged.filter((w: Work, i: number, arr: Work[]) =>
       arr.findIndex((b: Work) => b.content_id === w.content_id) === i
     )
-    const filtered = unique.filter((w: Work) => {
-      const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
-      return selectedGenres.every(gId => workGenreIds.includes(gId))
-    })
-    setPartialResults(partial)
+    // 追加ジャンルがあればフロントでフィルタリング
+    const filtered = selectedGenres.length > 1
+      ? unique.filter((w: Work) => {
+          const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+          return selectedGenres.every(gId => workGenreIds.includes(gId))
+        })
+      : unique
+    setPartialResults([])
     setWorks(filtered)
     setLoading(false)
   }
@@ -466,6 +468,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
