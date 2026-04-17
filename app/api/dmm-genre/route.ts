@@ -7,13 +7,11 @@ export async function GET() {
   const params = new URLSearchParams({
     api_id: API_ID!,
     affiliate_id: AFFILIATE_ID!,
-    site: 'FANZA',
-    service: 'digital',
-    floor: 'videoa',
+    floor_id: '43',
     output: 'json',
   })
 
-  const url = `https://api.dmm.com/affiliate/v3/FloorList?${params.toString()}`
+  const url = `https://api.dmm.com/affiliate/v3/GenreSearch?${params.toString()}`
 
   try {
     const res = await fetch(url)
