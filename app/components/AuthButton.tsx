@@ -115,6 +115,20 @@ export default function AuthButton() {
               💖 お気に入り女優
             </button>
 
+            {/* ジャンル検索 */}
+            <button
+              onClick={() => { router.push('/genre-search'); setMenuOpen(false) }}
+              style={{
+                width: '100%', padding: '12px 16px',
+                background: 'none', border: 'none',
+                textAlign: 'left', fontSize: '14px', fontWeight: '500',
+                color: 'var(--text)', cursor: 'pointer',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              🔍 ジャンル検索
+            </button>
+
             {/* お気に入り作品（今後実装） */}
             <button
               disabled

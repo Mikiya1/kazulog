@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
 
   if (keyword) params.set('keyword', keyword)
   if (actress) params.set('keyword', actress)
+  const genre = searchParams.get('genre') ?? ''
+  if (genre) params.set('genre', genre)
 
   const url = `https://api.dmm.com/affiliate/v3/ItemList?${params.toString()}`
 
