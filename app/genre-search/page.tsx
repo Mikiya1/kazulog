@@ -138,26 +138,36 @@ export default function GenreSearchPage() {
     const genreIds = selectedGenres.join(',')
 
     if (selectedFavorites.length === 0) {
-      // 複数ジャンル選択時は最初のジャンルで大量取得してフロントでフィルタリング
-      const firstGenre = selectedGenres[0]
-      const firstRes = await fetch(`/api/dmm?genre=${firstGenre}&hits=100&sort=rank&offset=1`)
+      // 各ジャンルの件数を確認して一番少ないジャンルを基準にする
+      const counts = await Promise.all(
+        selectedGenres.map(gId =>
+          fetch(`/api/dmm?genre=${gId}&hits=1&sort=rank`)
+            .then(r => r.json())
+            .then(d => ({ gId, total: Number(d.result?.total_count ?? 0) }))
+        )
+      )
+      const smallest = counts.sort((a, b) => a.total - b.total)[0]
+      const baseGenre = smallest.gId
+      const baseTotal = smallest.total
+
+      // 最小件数ジャンルで全件取得（最大2000件）
+      const firstRes = await fetch(`/api/dmm?genre=${baseGenre}&hits=100&sort=rank&offset=1`)
       const firstData = await firstRes.json()
-      const total = Number(firstData.result?.total_count ?? 0)
       const firstItems = firstData.result?.items ?? []
       let allItems = firstItems
-      if (total > 100) {
+      if (baseTotal > 100) {
         const offsets: number[] = []
-        for (let i = 101; i <= Math.min(total, 500); i += 100) offsets.push(i)
+        for (let i = 101; i <= Math.min(baseTotal, 2000); i += 100) offsets.push(i)
         const rest = await Promise.all(
           offsets.map(offset =>
-            fetch(`/api/dmm?genre=${firstGenre}&hits=100&sort=rank&offset=${offset}`)
+            fetch(`/api/dmm?genre=${baseGenre}&hits=100&sort=rank&offset=${offset}`)
               .then(r => r.json())
               .then(d => d.result?.items ?? [])
           )
         )
         allItems = [...firstItems, ...rest.flat()]
       }
-      // 複数ジャンルを全て含む作品のみ表示
+      // 残りの全ジャンルを含む作品のみ表示
       const filtered = allItems.filter((w: Work) => {
         const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
         return selectedGenres.every(gId => workGenreIds.includes(gId))
@@ -466,6 +476,7 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
 
 
 
