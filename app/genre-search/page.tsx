@@ -23,6 +23,7 @@ type Work = {
   affiliateURL: string
   imageURL: { large: string; small: string }
   prices?: { price: string }
+  iteminfo?: { genre?: { id: number; name: string }[] }
 }
 
 // よく使うジャンルを厳選
@@ -140,19 +141,25 @@ export default function GenreSearchPage() {
       return
     }
 
-    // 女優ID×ジャンルで並列検索
+    // 女優の作品を取得してフロントでジャンルフィルタリング
     const results = await Promise.all(
       selectedFavorites.map(f =>
-        fetch(`/api/dmm?actress_id=${f.actress_id}&genre=${genreIds}&hits=10&sort=rank`)
+        fetch(`/api/dmm?actress_id=${f.actress_id}&hits=100&sort=rank`)
           .then(r => r.json())
           .then(data => data.result?.items ?? [])
       )
     )
     const merged = results.flat()
+    // 重複除去
     const unique = merged.filter((w: Work, i: number, arr: Work[]) =>
       arr.findIndex((b: Work) => b.content_id === w.content_id) === i
     )
-    setWorks(unique)
+    // 選択したジャンルを全て含む作品のみ表示
+    const filtered = unique.filter((w: Work) => {
+      const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+      return selectedGenres.every(gId => workGenreIds.includes(gId))
+    })
+    setWorks(filtered)
     setLoading(false)
   }
 
@@ -334,4 +341,6 @@ export default function GenreSearchPage() {
     </>
   )
 }
+
+
 
