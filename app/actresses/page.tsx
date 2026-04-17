@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
@@ -41,6 +41,7 @@ export default function ActressesPage() {
   const [searchInput, setSearchInput] = useState('')
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -307,9 +308,9 @@ export default function ActressesPage() {
 
           {/* ページネーション */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <div ref={resultsRef} style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px', scrollMarginTop: '80px' }}>
               <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => { setPage(p => Math.max(1, p - 1)); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }}
                 disabled={page === 1}
                 style={{
                   padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600',
@@ -323,7 +324,7 @@ export default function ActressesPage() {
               {getPageNumbers().map((p, i) => (
                 <button
                   key={i}
-                  onClick={() => typeof p === 'number' && setPage(p)}
+                  onClick={() => { if (typeof p === 'number') { setPage(p); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) } }}
                   disabled={p === '...'}
                   style={{
                     padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600',
@@ -337,7 +338,7 @@ export default function ActressesPage() {
                 </button>
               ))}
               <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }}
                 disabled={page === totalPages}
                 style={{
                   padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600',
@@ -348,6 +349,23 @@ export default function ActressesPage() {
               >
                 →
               </button>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: '20px', padding: '0 12px', height: '34px', gap: '4px' }}>
+                <input
+                  type='number'
+                  min={1}
+                  max={totalPages}
+                  defaultValue={page}
+                  key={page}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const v = parseInt((e.target as HTMLInputElement).value)
+                      if (v >= 1 && v <= totalPages) { setPage(v); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }
+                    }
+                  }}
+                  style={{ width: '32px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '700', color: 'var(--text)', textAlign: 'center', outline: 'none', padding: 0 }}
+                />
+                <span style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '500' }}>/ {totalPages}</span>
+              </div>
             </div>
           )}
 
