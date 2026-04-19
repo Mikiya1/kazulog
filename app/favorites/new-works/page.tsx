@@ -151,16 +151,30 @@ export default function NewWorksPage() {
       <main style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)', padding: '24px 20px', maxWidth: '480px', margin: '0 auto' }}>
 
         {/* ヘッダー */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', padding: '0', color: 'var(--text)' }}>
-            ←
-          </button>
-          <div>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0 }}>最新作一覧 📬</h2>
-            <div style={{ fontSize: '12px', color: 'var(--subtext)', marginTop: '2px' }}>
-              お気に入り {favorites.length}人 の最新作
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', padding: '0', color: 'var(--text)' }}>
+              ←
+            </button>
+            <div>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0 }}>最新作一覧 📬</h2>
+              <div style={{ fontSize: '12px', color: 'var(--subtext)', marginTop: '2px' }}>
+                お気に入り {favorites.length}人 の最新作
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => router.push('/favorites/new-works/by-actress')}
+            style={{
+              background: 'var(--card)', color: 'var(--text)',
+              border: '1.5px solid var(--border)',
+              borderRadius: '20px', padding: '8px 14px',
+              fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            👩 女優別
+          </button>
         </div>
 
         {/* ローディング */}
