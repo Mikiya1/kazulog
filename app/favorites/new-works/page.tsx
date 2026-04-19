@@ -57,7 +57,7 @@ export default function NewWorksPage() {
     // 全女優の最新作を並列取得
     Promise.all(
       favorites.map(fav =>
-        fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=10&sort=date&offset=1`)
+        fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=30&sort=date&offset=1`)
           .then(r => r.json())
           .then(data => ({ fav, items: (data.result?.items ?? []) as Work[] }))
           .catch(() => ({ fav, items: [] as Work[] }))

@@ -122,17 +122,30 @@ export default function FavoritesPage() {
           <h2 style={{ fontSize: '24px', fontWeight: '800' }}>
             お気に入り 💖
           </h2>
-          <button
-            onClick={() => router.push('/favorites/new-works')}
-            style={{
-              background: 'var(--gradient)', color: '#fff', border: 'none',
-              borderRadius: '20px', padding: '8px 16px',
-              fontSize: '13px', fontWeight: '700', cursor: 'pointer',
-              boxShadow: 'var(--shadow-btn)',
-            }}
-          >
-            📬 最新作を見る
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => router.push('/favorites/new-works')}
+              style={{
+                background: 'var(--gradient)', color: '#fff', border: 'none',
+                borderRadius: '20px', padding: '8px 14px',
+                fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                boxShadow: 'var(--shadow-btn)',
+              }}
+            >
+              📬 時系列
+            </button>
+            <button
+              onClick={() => router.push('/favorites/new-works/by-actress')}
+              style={{
+                background: 'var(--card)', color: 'var(--text)',
+                border: '1.5px solid var(--border)',
+                borderRadius: '20px', padding: '8px 14px',
+                fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              }}
+            >
+              👩 女優別
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '32px' }}>
