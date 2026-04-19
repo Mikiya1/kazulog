@@ -118,9 +118,22 @@ export default function FavoritesPage() {
       <Header />
       <main style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)', padding: '24px 20px', maxWidth: '480px', margin: '0 auto' }}>
 
-        <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>
-          お気に入り 💖
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800' }}>
+            お気に入り 💖
+          </h2>
+          <button
+            onClick={() => router.push('/favorites/new-works')}
+            style={{
+              background: 'var(--gradient)', color: '#fff', border: 'none',
+              borderRadius: '20px', padding: '8px 16px',
+              fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+              boxShadow: 'var(--shadow-btn)',
+            }}
+          >
+            📬 最新作を見る
+          </button>
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '32px' }}>
           {favorites.map(fav => (
