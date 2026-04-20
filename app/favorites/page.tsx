@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
-import RecommendedActresses from '../components/RecommendedActresses'
 
 type Favorite = {
   id: string
@@ -35,7 +34,7 @@ type ActressWorks = {
   error: boolean
 }
 
-type Tab = 'list' | 'timeline' | 'by-actress' | 'recommended'
+type Tab = 'list' | 'timeline' | 'by-actress'
 
 const HITS = 30
 
@@ -211,9 +210,7 @@ export default function FavoritesPage() {
             <button style={tabStyle('by-actress') as React.CSSProperties} onClick={() => setTab('by-actress')}>
               👩 女優別
             </button>
-            <button style={tabStyle('recommended') as React.CSSProperties} onClick={() => setTab('recommended')}>
-              ✨ おすすめ
-            </button>
+
           </div>
         </div>
 
@@ -409,10 +406,7 @@ export default function FavoritesPage() {
             </>
           )}
 
-          {/* ===== おすすめ ===== */}
-          {tab === 'recommended' && (
-            <RecommendedActresses />
-          )}
+
 
         </div>
       </main>
