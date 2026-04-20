@@ -23,6 +23,7 @@ type Work = {
     genre?: { id: number; name: string }[]
     actress?: { id: number; name: string }[]
   }
+  volume?: string
 }
 
 const POPULAR_GENRES: { category: string; genres: { id: string; name: string }[] }[] = [

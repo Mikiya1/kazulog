@@ -18,6 +18,8 @@ type Work = {
   affiliateURL: string
   imageURL: { large: string; small: string }
   date: string
+  volume?: string
+  iteminfo?: { actress?: { id: number; name: string }[] }
 }
 
 type ActressWorks = {
