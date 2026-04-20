@@ -139,11 +139,11 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
         .sort((a, b) => b.matchedGenres.length - a.matchedGenres.length)
         .slice(0, MAX_DISPLAY)
 
-      // 7. 各女優の画像を取得（並列）
+      // 7. 各女優の画像を取得（actress_idで検索）
       const withImages = await Promise.all(
         candidates.map(async (a) => {
           try {
-            const res = await fetch(`/api/dmm-actress?keyword=${encodeURIComponent(a.name)}&hits=1`)
+            const res = await fetch(`/api/dmm-actress?actress_id=${a.id}`)
             const data = await res.json()
             const found = data.result?.actress?.[0]
             return {
@@ -154,7 +154,7 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
                 : `${a.matchedGenres.slice(0, 2).join('・')}系のあなたへ`,
             }
           } catch {
-            return { ...a, reason: a.matchedGenres[0] + 'が好きなあなたへ' }
+            return { ...a, reason: a.matchedGenres[0] + 'が好きなあなたへ', imageUrl: '' }
           }
         })
       )

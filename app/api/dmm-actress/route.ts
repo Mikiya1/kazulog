@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
 
   // 通常検索モード
   const keyword = searchParams.get('keyword') ?? ''
+  const actressId = searchParams.get('actress_id') ?? ''
   const hits = searchParams.get('hits') ?? '20'
   const offset = searchParams.get('offset') ?? '1'
   const sort = searchParams.get('sort') ?? 'name'
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
   })
 
   if (keyword) params.set('keyword', keyword)
+  if (actressId) params.set('actress_id', actressId)
   if (searchParams.get('initial')) params.set('initial', searchParams.get('initial')!)
 
   const url = `https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`
