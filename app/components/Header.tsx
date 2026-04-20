@@ -1,10 +1,11 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import AuthButton from './AuthButton'
 
 export default function Header() {
   const router = useRouter()
+  const pathname = usePathname()
 
   return (
     <header style={{
@@ -38,8 +39,18 @@ export default function Header() {
         かずログ 🔥
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <button
+          onClick={() => router.push('/actresses')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '13px', fontWeight: '700',
+            color: pathname === '/actresses' ? '#FD297B' : 'var(--subtext)',
+            padding: 0,
+          }}
+        >
+          女優一覧
+        </button>
         <AuthButton />
       </div>
     </header>

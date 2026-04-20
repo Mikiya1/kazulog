@@ -149,6 +149,37 @@ export default function Home() {
           <RecommendedActresses />
         </div>
 
+        {/* 女優一覧バナー */}
+        <div style={{ padding: '28px 20px 0' }}>
+          <button
+            onClick={() => router.push('/actresses')}
+            style={{
+              width: '100%',
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: '20px',
+              padding: '20px',
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text)', marginBottom: '4px' }}>
+                女優一覧を見る
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--subtext)', marginTop: '4px' }}>
+                50音・人気順から好きな女優を探そう
+              </div>
+            </div>
+            <div style={{ fontSize: '28px', flexShrink: 0 }}>👩</div>
+          </button>
+        </div>
+
         {/* ジャンル検索バナー */}
         <div style={{ padding: '28px 20px 0' }}>
           <button
