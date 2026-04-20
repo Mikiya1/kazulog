@@ -4,6 +4,10 @@ const API_ID = process.env.DMM_API_ID
 const AFFILIATE_ID = process.env.DMM_AFFILIATE_ID
 const SITE_AFFILIATE_ID = process.env.DMM_SITE_AFFILIATE_ID
 
+// メモリキャッシュ（Vercelのサーバーレス環境でも同一インスタンス内で有効）
+const cache = new Map<string, { data: unknown; ts: number }>()
+const CACHE_TTL = 5 * 60 * 1000 // 5分
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
 
@@ -19,7 +23,6 @@ export async function GET(request: NextRequest) {
   if (actressId) articles.push({ type: 'actress', id: actressId })
   if (genre) articles.push({ type: 'genre', id: genre })
 
-  // article配列を手動でURL文字列として構築（[]をエンコードしない）
   const articleStr = articles.map((a, i) =>
     `article[${i}]=${encodeURIComponent(a.type)}&article_id[${i}]=${encodeURIComponent(a.id)}`
   ).join('&')
@@ -41,8 +44,20 @@ export async function GET(request: NextRequest) {
 
   const url = `https://api.dmm.com/affiliate/v3/ItemList?${baseParams.toString()}${articleStr ? '&' + articleStr : ''}`
 
+  // キャッシュチェック
+  const cacheKey = url
+  const cached = cache.get(cacheKey)
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return NextResponse.json(cached.data, {
+      headers: { 'X-Cache': 'HIT' },
+    })
+  }
+
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      // Next.jsのfetchキャッシュも活用
+      next: { revalidate: 300 }, // 5分
+    })
     const data = await res.json()
 
     if (data.result?.items) {
@@ -52,8 +67,18 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    return NextResponse.json(data)
-  } catch (error) {
+    // キャッシュに保存
+    cache.set(cacheKey, { data, ts: Date.now() })
+    // キャッシュが大きくなりすぎたら古いものを削除
+    if (cache.size > 500) {
+      const oldest = [...cache.entries()].sort((a, b) => a[1].ts - b[1].ts)[0]
+      cache.delete(oldest[0])
+    }
+
+    return NextResponse.json(data, {
+      headers: { 'X-Cache': 'MISS' },
+    })
+  } catch {
     return NextResponse.json({ error: 'API fetch failed' }, { status: 500 })
   }
 }

@@ -288,6 +288,11 @@ export default function GenreSearchPage() {
   const [partialResults, setPartialResults] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'date' | 'rank'>('date')
+  const [genreOffset, setGenreOffset] = useState(1)
+  const [genreTotal, setGenreTotal] = useState(0)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [primaryGenreId, setPrimaryGenreId] = useState('')
+  const [isGenreOnlySearch, setIsGenreOnlySearch] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [showOtherGenres, setShowOtherGenres] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
@@ -299,6 +304,23 @@ export default function GenreSearchPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortOrder])
+
+  const loadMoreGenreWorks = async () => {
+    if (loadingMore || genreOffset > genreTotal) return
+    setLoadingMore(true)
+    const res = await fetch(`/api/dmm?hits=20&sort=${sortOrder}&offset=${genreOffset}&genre=${primaryGenreId}`)
+    const data = await res.json()
+    const items: Work[] = data.result?.items ?? []
+    const filtered = selectedGenres.length > 1
+      ? items.filter((w: Work) => {
+          const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+          return selectedGenres.every(gId => workGenreIds.includes(gId))
+        })
+      : items
+    setWorks(prev => [...prev, ...filtered])
+    setGenreOffset(prev => prev + 20)
+    setLoadingMore(false)
+  }
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
@@ -346,46 +368,34 @@ export default function GenreSearchPage() {
     setSearched(true)
     setWorks([])
     setCurrentPage(1)
+    setIsGenreOnlySearch(false)
+    setGenreTotal(0)
+    setGenreOffset(1)
 
     const selectedFavorites = favorites.filter(f => selectedActresses.includes(f.actress_id))
     const genreIds = selectedGenres.join(',')
 
     if (selectedFavorites.length === 0) {
-      // article配列方式でジャンル直接検索（複数ジャンルは最初の1つをAPIで絞り、残りはフロントフィルタ）
+      // 初回は20件だけ取得して即表示、ページネーションで追加読み込み
       const primaryGenre = selectedGenres[0]
-      const buildUrl = (offset: number) => {
-        const params = new URLSearchParams({ hits: '100', sort: sortOrder, offset: String(offset) })
-        return `/api/dmm?${params.toString()}&genre_ids=${selectedGenres.join(',')}&primary_genre=${primaryGenre}`
-      }
-
-      // genre_idsはAPIルートでは使わないので、article方式のパラメータを直接組み立てる
-      const fetchPage = (offset: number) =>
-        fetch(`/api/dmm?hits=100&sort=${sortOrder}&offset=${offset}&genre=${primaryGenre}`)
-          .then(r => r.json())
-          .then(d => d.result?.items ?? [] as Work[])
-
-      const firstRes = await fetch(`/api/dmm?hits=100&sort=${sortOrder}&offset=1&genre=${primaryGenre}`)
+      const firstRes = await fetch(`/api/dmm?hits=20&sort=${sortOrder}&offset=1&genre=${primaryGenre}`)
       const firstData = await firstRes.json()
-      const total = Number(firstData.result?.total_count ?? 0)
       const firstItems: Work[] = firstData.result?.items ?? []
-
-      let allItems: Work[] = firstItems
-      if (total > 100) {
-        const offsets: number[] = []
-        for (let i = 101; i <= Math.min(total, 2000); i += 100) offsets.push(i)
-        const rest = await Promise.all(offsets.map(fetchPage))
-        allItems = [...firstItems, ...rest.flat()]
-      }
+      const total = Number(firstData.result?.total_count ?? 0)
 
       // 複数ジャンル選択時はフロントでANDフィルタ
       const filtered = selectedGenres.length > 1
-        ? allItems.filter((w: Work) => {
+        ? firstItems.filter((w: Work) => {
             const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
             return selectedGenres.every(gId => workGenreIds.includes(gId))
           })
-        : allItems
+        : firstItems
 
       setWorks(filtered)
+      setGenreOffset(21)
+      setGenreTotal(total)
+      setPrimaryGenreId(primaryGenre)
+      setIsGenreOnlySearch(true)
       setLoading(false)
       return
     }
@@ -789,6 +799,24 @@ export default function GenreSearchPage() {
                       <span style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '500' }}>/ {totalPages}</span>
                     </div>
                   </div>
+                )}
+
+                {/* ジャンルのみ検索時の「もっと読み込む」 */}
+                {isGenreOnlySearch && genreOffset <= genreTotal && (
+                  <button
+                    onClick={loadMoreGenreWorks}
+                    disabled={loadingMore}
+                    style={{
+                      width: '100%', padding: '14px',
+                      background: loadingMore ? 'var(--border)' : 'var(--card)',
+                      color: 'var(--text)', border: '1.5px solid var(--border)',
+                      borderRadius: '50px', fontSize: '14px', fontWeight: '700',
+                      cursor: loadingMore ? 'not-allowed' : 'pointer',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    {loadingMore ? '読み込み中...' : `もっと見る（${genreTotal - works.length}件以上）`}
+                  </button>
                 )}
               </>
             )}
