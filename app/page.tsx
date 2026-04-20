@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import RecommendedActresses from './components/RecommendedActresses'
 import Header from './components/Header'
 import { supabase } from './lib/supabase'
 import { useState, useEffect } from 'react'
@@ -137,16 +136,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* あなたへのおすすめ */}
-        <div style={{ padding: '28px 20px 0' }}>
-          <div style={{ marginBottom: '14px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--subtext)', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              あなたへのおすすめ ✨
-            </div>
-          </div>
-          <RecommendedActresses />
         </div>
 
         {/* 女優一覧バナー */}
