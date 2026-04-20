@@ -292,6 +292,14 @@ export default function GenreSearchPage() {
   const [showOtherGenres, setShowOtherGenres] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
 
+  // ソート変更時に再検索
+  useEffect(() => {
+    if (searched && !loading) {
+      search()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortOrder])
+
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
       const next = new Set(prev)
@@ -643,7 +651,7 @@ export default function GenreSearchPage() {
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
-                  onClick={() => { setSortOrder('date'); setCurrentPage(1) }}
+                  onClick={() => { if (sortOrder !== 'date') { setSortOrder('date'); setCurrentPage(1) } }}
                   style={{
                     padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
                     background: sortOrder === 'date' ? '#FD297B' : 'var(--card)',
@@ -654,7 +662,7 @@ export default function GenreSearchPage() {
                   発売日順
                 </button>
                 <button
-                  onClick={() => { setSortOrder('rank'); setCurrentPage(1) }}
+                  onClick={() => { if (sortOrder !== 'rank') { setSortOrder('rank'); setCurrentPage(1) } }}
                   style={{
                     padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
                     background: sortOrder === 'rank' ? '#FD297B' : 'var(--card)',
