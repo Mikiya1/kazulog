@@ -343,30 +343,40 @@ export default function GenreSearchPage() {
     const genreIds = selectedGenres.join(',')
 
     if (selectedFavorites.length === 0) {
-      // ジャンル名をキーワードとして検索（スペース区切りでAND検索）
-      const keywords = selectedGenres.map(gId => GENRE_NAME_MAP[gId] ?? '').filter(Boolean).join(' ')
-      const firstRes = await fetch(`/api/dmm?keyword=${encodeURIComponent(keywords)}&hits=100&sort=rank&offset=1`)
+      // article配列方式でジャンル直接検索（複数ジャンルは最初の1つをAPIで絞り、残りはフロントフィルタ）
+      const primaryGenre = selectedGenres[0]
+      const buildUrl = (offset: number) => {
+        const params = new URLSearchParams({ hits: '100', sort: sortOrder, offset: String(offset) })
+        return `/api/dmm?${params.toString()}&genre_ids=${selectedGenres.join(',')}&primary_genre=${primaryGenre}`
+      }
+
+      // genre_idsはAPIルートでは使わないので、article方式のパラメータを直接組み立てる
+      const fetchPage = (offset: number) =>
+        fetch(`/api/dmm?hits=100&sort=${sortOrder}&offset=${offset}&genre=${primaryGenre}`)
+          .then(r => r.json())
+          .then(d => d.result?.items ?? [] as Work[])
+
+      const firstRes = await fetch(`/api/dmm?hits=100&sort=${sortOrder}&offset=1&genre=${primaryGenre}`)
       const firstData = await firstRes.json()
       const total = Number(firstData.result?.total_count ?? 0)
-      const firstItems = firstData.result?.items ?? []
-      let allItems = firstItems
+      const firstItems: Work[] = firstData.result?.items ?? []
+
+      let allItems: Work[] = firstItems
       if (total > 100) {
         const offsets: number[] = []
-        for (let i = 101; i <= Math.min(total, 1000); i += 100) offsets.push(i)
-        const rest = await Promise.all(
-          offsets.map(offset =>
-            fetch(`/api/dmm?keyword=${encodeURIComponent(keywords)}&hits=100&sort=rank&offset=${offset}`)
-              .then(r => r.json())
-              .then(d => d.result?.items ?? [])
-          )
-        )
+        for (let i = 101; i <= Math.min(total, 2000); i += 100) offsets.push(i)
+        const rest = await Promise.all(offsets.map(fetchPage))
         allItems = [...firstItems, ...rest.flat()]
       }
-      // ジャンルIDでフロントフィルタリング
-      const filtered = allItems.filter((w: Work) => {
-        const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
-        return selectedGenres.every(gId => workGenreIds.includes(gId))
-      })
+
+      // 複数ジャンル選択時はフロントでANDフィルタ
+      const filtered = selectedGenres.length > 1
+        ? allItems.filter((w: Work) => {
+            const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+            return selectedGenres.every(gId => workGenreIds.includes(gId))
+          })
+        : allItems
+
       setWorks(filtered)
       setLoading(false)
       return
