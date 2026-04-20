@@ -305,6 +305,25 @@ export default function GenreSearchPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortOrder])
 
+  const fetchGenrePage = async (page: number) => {
+    if (!isGenreOnlySearch) return
+    setLoading(true)
+    setWorks([])
+    const offset = (page - 1) * PER_PAGE + 1
+    const res = await fetch(`/api/dmm?hits=${PER_PAGE}&sort=${sortOrder}&offset=${offset}&genre=${primaryGenreId}`)
+    const data = await res.json()
+    const items: Work[] = data.result?.items ?? []
+    const filtered = selectedGenres.length > 1
+      ? items.filter((w: Work) => {
+          const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+          return selectedGenres.every(gId => workGenreIds.includes(gId))
+        })
+      : items
+    setWorks(filtered)
+    setLoading(false)
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+  }
+
   const loadMoreGenreWorks = async () => {
     if (loadingMore || genreOffset > genreTotal) return
     setLoadingMore(true)
@@ -440,14 +459,20 @@ export default function GenreSearchPage() {
     setLoading(false)
   }
 
-  const sortedWorks = [...works].sort((a, b) => {
-    if (sortOrder === 'date') {
-      return new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
-    }
-    return 0
-  })
-  const totalPages = Math.ceil(sortedWorks.length / PER_PAGE)
-  const pagedWorks = sortedWorks.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+  const sortedWorks = isGenreOnlySearch
+    ? works // ジャンルのみ検索時はAPIソート済みなのでそのまま
+    : [...works].sort((a, b) => {
+        if (sortOrder === 'date') {
+          return new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
+        }
+        return 0
+      })
+  const totalPages = isGenreOnlySearch
+    ? Math.ceil(genreTotal / PER_PAGE)
+    : Math.ceil(sortedWorks.length / PER_PAGE)
+  const pagedWorks = isGenreOnlySearch
+    ? sortedWorks // 既に今のページ分だけ取得済み
+    : sortedWorks.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
 
   return (
     <>
@@ -757,7 +782,7 @@ export default function GenreSearchPage() {
                 {totalPages > 1 && (
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
                     <button
-                      onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }}
+                      onClick={() => { const p = Math.max(1, currentPage - 1); setCurrentPage(p); fetchGenrePage(p) }}
                       disabled={currentPage === 1}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >←</button>
@@ -771,13 +796,13 @@ export default function GenreSearchPage() {
                       .map((p, i) => (
                         <button
                           key={i}
-                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) } }}
+                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); fetchGenrePage(p) } }}
                           style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: p === '...' ? 'default' : 'pointer', background: p === currentPage ? '#FD297B' : 'var(--card)', color: p === currentPage ? '#fff' : 'var(--text)', border: p === currentPage ? 'none' : '1.5px solid var(--border)' }}
                         >{p}</button>
                       ))
                     }
                     <button
-                      onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }}
+                      onClick={() => { const p = Math.min(totalPages, currentPage + 1); setCurrentPage(p); fetchGenrePage(p) }}
                       disabled={currentPage === totalPages}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >→</button>
@@ -791,7 +816,7 @@ export default function GenreSearchPage() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             const v = parseInt((e.target as HTMLInputElement).value)
-                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50) }
+                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); fetchGenrePage(v) }
                           }
                         }}
                         style={{ width: '32px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '700', color: 'var(--text)', textAlign: 'center', outline: 'none', padding: 0 }}
@@ -801,23 +826,7 @@ export default function GenreSearchPage() {
                   </div>
                 )}
 
-                {/* ジャンルのみ検索時の「もっと読み込む」 */}
-                {isGenreOnlySearch && genreOffset <= genreTotal && (
-                  <button
-                    onClick={loadMoreGenreWorks}
-                    disabled={loadingMore}
-                    style={{
-                      width: '100%', padding: '14px',
-                      background: loadingMore ? 'var(--border)' : 'var(--card)',
-                      color: 'var(--text)', border: '1.5px solid var(--border)',
-                      borderRadius: '50px', fontSize: '14px', fontWeight: '700',
-                      cursor: loadingMore ? 'not-allowed' : 'pointer',
-                      marginBottom: '16px',
-                    }}
-                  >
-                    {loadingMore ? '読み込み中...' : `もっと見る（${genreTotal - works.length}件以上）`}
-                  </button>
-                )}
+
               </>
             )}
           </>
