@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
           output: 'json',
         })
         try {
-          const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`)
+          const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+        })
           const data = await res.json()
           const a = data.result?.actress?.[0]
           if (a && (a.imageURL?.large || a.imageURL?.small)) {
@@ -75,7 +77,9 @@ export async function GET(request: NextRequest) {
   const url = `https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`
 
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+    })
     const data = await res.json()
     const actresses = (data.result?.actress ?? []).map((a: any) => ({
       id: a.id,
