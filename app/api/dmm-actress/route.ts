@@ -12,44 +12,43 @@ const FEATURED_NAMES = [
   '美咲かんな', '松井日奈子', '楪カレン', '愛オりあ', '尾崎えりか', '倉木しおり',
 ]
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('mode') ?? 'normal'
 
   if (mode === 'featured') {
-    const actresses = []
-
-    for (const name of FEATURED_NAMES) {
-      const params = new URLSearchParams({
-        api_id: API_ID!,
-        affiliate_id: AFFILIATE_ID!,
-        keyword: name,
-        hits: '1',
-        output: 'json',
-      })
-      try {
-        const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`)
-        const data = await res.json()
-        const a = data.result?.actress?.[0]
-        if (a && (a.imageURL?.large || a.imageURL?.small)) {
-          actresses.push({
-            id: a.id,
-            name: a.name,
-            imageUrl: (a.imageURL?.large ?? a.imageURL?.small ?? '').replace('http://', 'https://'),
-            tags: [
-              a.cup ? `${a.cup}カップ` : null,
-              a.height ? `${a.height}cm` : null,
-            ].filter(Boolean) as string[],
-          })
+    // 並列リクエストで高速化
+    const results = await Promise.all(
+      FEATURED_NAMES.map(async (name) => {
+        const params = new URLSearchParams({
+          api_id: API_ID!,
+          affiliate_id: AFFILIATE_ID!,
+          keyword: name,
+          hits: '1',
+          output: 'json',
+        })
+        try {
+          const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${params.toString()}`)
+          const data = await res.json()
+          const a = data.result?.actress?.[0]
+          if (a && (a.imageURL?.large || a.imageURL?.small)) {
+            return {
+              id: a.id,
+              name: a.name,
+              imageUrl: (a.imageURL?.large ?? a.imageURL?.small ?? '').replace('http://', 'https://'),
+              tags: [
+                a.cup ? `${a.cup}カップ` : null,
+                a.height ? `${a.height}cm` : null,
+              ].filter(Boolean) as string[],
+            }
+          }
+        } catch {
+          console.error(`Failed to fetch: ${name}`)
         }
-      } catch {
-        console.error(`Failed to fetch: ${name}`)
-      }
-      await sleep(100)
-    }
-
+        return null
+      })
+    )
+    const actresses = results.filter(Boolean)
     return NextResponse.json({ result: { actress: actresses } })
   }
 
