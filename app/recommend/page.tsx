@@ -13,7 +13,8 @@ type Work = {
   affiliateURL: string
   price: string
   imageURL: { large: string; small: string }
-  iteminfo?: { actress?: { id: number; name: string }[] }
+  iteminfo?: { actress?: { id: number; name: string }[]; genre?: { id: number; name: string }[] }
+  volume?: string
 }
 
 function RecommendContent() {
@@ -218,6 +219,17 @@ function RecommendContent() {
                       } as React.CSSProperties}>
                         {work.price}
                       </div>
+                      {/* 女優名・動画時間 */}
+                      {(work.iteminfo?.actress?.length ?? 0) > 0 && (
+                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          👩 {work.iteminfo!.actress!.map(a => a.name).join(' / ')}
+                        </div>
+                      )}
+                      {work.volume && (
+                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>
+                          🕐 {work.volume}分
+                        </div>
+                      )}
                       <button
                         onClick={() => window.open(work.affiliateURL, '_blank')}
                         style={{

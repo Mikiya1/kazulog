@@ -761,7 +761,16 @@ export default function GenreSearchPage() {
                           <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 && currentPage === 1 ? '18px' : 0 }}>
                             {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
                           </div>
-
+                      {(work.iteminfo?.actress?.length ?? 0) > 0 && (
+                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          👩 {work.iteminfo!.actress!.map(a => a.name).join(' / ')}
+                        </div>
+                      )}
+                      {work.volume && (
+                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>
+                          🕐 {work.volume}分
+                        </div>
+                      )}
                           <button
                             onClick={() => window.open(work.affiliateURL, '_blank')}
                             style={{

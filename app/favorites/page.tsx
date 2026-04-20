@@ -19,7 +19,8 @@ type Work = {
   affiliateURL: string
   imageURL: { large: string; small: string }
   date: string
-  iteminfo?: { actress?: { id: number; name: string }[] }
+  iteminfo?: { actress?: { id: number; name: string }[]; genre?: { id: number; name: string }[] }
+  volume?: string
 }
 
 type WorkWithActresses = Work & {
@@ -320,8 +321,13 @@ export default function FavoritesPage() {
                         } as React.CSSProperties}>
                           {work.title}
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '6px' }}>
-                          {work.date ? `発売日: ${work.date}` : ''}
+                        {(work.iteminfo?.actress?.length ?? 0) > 0 && (
+                          <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            👩 {work.iteminfo!.actress!.map(a => a.name).join(' / ')}
+                          </div>
+                        )}
+                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>
+                          {work.date ? `📅 ${work.date}` : ''}{work.volume ? `　🕐 ${work.volume}分` : ''}
                         </div>
                       </div>
                     </div>

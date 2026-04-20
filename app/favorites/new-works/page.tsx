@@ -18,7 +18,8 @@ type Work = {
   affiliateURL: string
   imageURL: { large: string; small: string }
   date: string
-  iteminfo?: { actress?: { id: number; name: string }[] }
+  iteminfo?: { actress?: { id: number; name: string }[]; genre?: { id: number; name: string }[] }
+  volume?: string
 }
 
 type WorkWithActresses = Work & {
