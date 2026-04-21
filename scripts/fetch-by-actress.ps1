@@ -2,33 +2,54 @@ $headers = @{"Authorization"="Bearer kazulog-cron-secret-2024"}
 $base = "http://localhost:3000/api/batch/sync"
 
 Write-Host "Fetching actress IDs..." -ForegroundColor Cyan
-$actressRes = Invoke-WebRequest -Uri "http://localhost:3000/api/batch/actress-ids" -Headers $headers -UseBasicParsing
+$actressRes = Invoke-WebRequest -Uri "http://localhost:3000/api/batch/actress-ids?limit=200" -Headers $headers -UseBasicParsing
 $actresses = ($actressRes.Content | ConvertFrom-Json).actresses
 
-Write-Host "Total: $($actresses.Count) actresses" -ForegroundColor Cyan
+# 47番目から再開
+$actresses = $actresses | Select-Object -Skip 46
+
+Write-Host "Remaining: $($actresses.Count) actresses" -ForegroundColor Cyan
 
 $total = 0
-$i = 0
-foreach ($actress in $actresses) {
-    $i++
-    $offset = 1
-    $actressSaved = 0
-    Write-Host "[$i/$($actresses.Count)] $($actress.name)..." -NoNewline
+$i = 46
 
-    while ($true) {
-        $url = "${base}?type=by_actress&actress_id=$($actress.id)&offset=${offset}"
-        $res = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing
-        $json = $res.Content | ConvertFrom-Json
-        $actressSaved += $json.results.saved
+# 5人ずつ並列処理
+for ($batch = 0; $batch -lt $actresses.Count; $batch += 5) {
+    $group = $actresses | Select-Object -Skip $batch -First 5
+    $jobs = @()
 
-        if ($json.results.saved -lt 2000) { break }
-        $offset = $json.results.next_offset
-        Start-Sleep -Milliseconds 200
+    foreach ($actress in $group) {
+        $i++
+        $aid = $actress.id
+        $aname = $actress.name
+        $jobs += Start-Job -ScriptBlock {
+            param($base, $headers, $aid, $aname, $i)
+            $offset = 1
+            $saved = 0
+            while ($true) {
+                $url = "${base}?type=by_actress&actress_id=${aid}&offset=${offset}"
+                try {
+                    $res = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing
+                    $json = $res.Content | ConvertFrom-Json
+                    $saved += $json.results.saved
+                    if ($json.results.saved -lt 2000) { break }
+                    $offset = $json.results.next_offset
+                } catch { break }
+                Start-Sleep -Milliseconds 200
+            }
+            return @{name=$aname; saved=$saved; index=$i}
+        } -ArgumentList $base, $headers, $aid, $aname, $i
     }
 
-    Write-Host " $actressSaved works" -ForegroundColor Green
-    $total += $actressSaved
-    Start-Sleep -Milliseconds 200
+    $results = $jobs | Wait-Job | Receive-Job
+    $jobs | Remove-Job
+
+    foreach ($r in $results) {
+        Write-Host "[$($r.index)/200] $($r.name): $($r.saved) works" -ForegroundColor Green
+        $total += $r.saved
+    }
+
+    Start-Sleep -Milliseconds 300
 }
 
 Write-Host "Total saved: $total" -ForegroundColor Cyan
