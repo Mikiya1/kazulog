@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
+import RecommendedActresses from '../components/RecommendedActresses'
 
 type Favorite = {
   id: string
@@ -34,7 +35,7 @@ type ActressWorks = {
   error: boolean
 }
 
-type Tab = 'list' | 'timeline' | 'by-actress'
+type Tab = 'list' | 'timeline' | 'by-actress' | 'recommended'
 
 const HITS = 30
 
@@ -407,6 +408,12 @@ export default function FavoritesPage() {
           )}
 
 
+
+
+          {/* ===== おすすめ ===== */}
+          {tab === 'recommended' && (
+            <RecommendedActresses />
+          )}
 
         </div>
       </main>
