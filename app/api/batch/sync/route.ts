@@ -101,26 +101,24 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'all' || type === 'actresses') {
-      // 人気女優を取得してpopular_rankを保存
-      const p1 = new URLSearchParams({
-        api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
-        hits: '100', sort: 'popular', offset: '1', output: 'json',
-      })
-      await sleep(300)
-      const p2 = new URLSearchParams({
-        api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
-        hits: '100', sort: 'popular', offset: '101', output: 'json',
-      })
+      // 人気女優を取得してpopular_rankを保存（sort=popularは非対応のためname順で取得）
+      const fetchPage = async (offset: number) => {
+        const p = new URLSearchParams({
+          api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
+          hits: '100', sort: 'name', offset: String(offset), output: 'json',
+        })
+        const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p.toString()}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+        })
+        const data = await res.json()
+        return data.result?.actress ?? []
+      }
 
-      const [res1, res2] = await Promise.all([
-        fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p1.toString()}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
-        fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p2.toString()}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
-      ])
-
-      console.log('ActressSearch res1 status:', res1.result?.status, 'count:', res1.result?.actress?.length)
-      console.log('ActressSearch res1 error:', JSON.stringify(res1.result?.errors ?? res1.error))
-
-      const popularActresses = [...(res1.result?.actress ?? []), ...(res2.result?.actress ?? [])]
+      await sleep(200)
+      const page1 = await fetchPage(1)
+      await sleep(200)
+      const page2 = await fetchPage(101)
+      const popularActresses = [...page1, ...page2]
       for (let i = 0; i < popularActresses.length; i++) {
         const a = popularActresses[i]
         await supabase.from('actresses').upsert({
