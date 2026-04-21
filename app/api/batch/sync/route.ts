@@ -117,6 +117,9 @@ export async function GET(request: NextRequest) {
         fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p2.toString()}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
       ])
 
+      console.log('ActressSearch res1 status:', res1.result?.status, 'count:', res1.result?.actress?.length)
+      console.log('ActressSearch res1 error:', JSON.stringify(res1.result?.errors ?? res1.error))
+
       const popularActresses = [...(res1.result?.actress ?? []), ...(res2.result?.actress ?? [])]
       for (let i = 0; i < popularActresses.length; i++) {
         const a = popularActresses[i]
