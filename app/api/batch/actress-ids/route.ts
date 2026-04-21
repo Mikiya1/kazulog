@@ -13,20 +13,8 @@ export async function GET(request: NextRequest) {
   }
 
   const limit = parseInt(new URL(request.url).searchParams.get('limit') ?? '200')
-  const minWorks = parseInt(new URL(request.url).searchParams.get('min_works') ?? '50')
 
-  // DB内の作品数が多い順で、かつ作品数がまだ少ない女優を取得
-  // min_works以上の作品数がDBに既にある女優はスキップ
-  const { data } = await supabase.rpc('get_actresses_by_work_count', { p_limit: limit * 3 })
+  const { data } = await supabase.rpc('get_actresses_by_work_count', { p_limit: limit })
 
-  if (!data) {
-    return NextResponse.json({ actresses: [] })
-  }
-
-  // 作品数がmin_works未満の女優のみ返す（まだ取得が足りない女優）
-  const filtered = (data as { id: string; name: string; work_count: number }[])
-    .filter(a => a.work_count < minWorks)
-    .slice(0, limit)
-
-  return NextResponse.json({ actresses: filtered, total: filtered.length })
+  return NextResponse.json({ actresses: data ?? [] })
 }
