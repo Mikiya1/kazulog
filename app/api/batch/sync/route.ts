@@ -35,11 +35,25 @@ async function fetchWorks(params: Record<string, string>) {
   return data.result?.items ?? []
 }
 
-async function saveWorksBulk(items: any[]) {
+async function saveWorksBulk(items: any[], skipExisting = false) {
   if (items.length === 0) return
 
+  let targetItems = items
+
+  if (skipExisting) {
+    // 既存のIDを確認してスキップ
+    const ids = items.map(i => i.content_id)
+    const { data: existing } = await supabase
+      .from('works')
+      .select('id')
+      .in('id', ids)
+    const existingIds = new Set((existing ?? []).map(w => w.id))
+    targetItems = items.filter(i => !existingIds.has(i.content_id))
+    if (targetItems.length === 0) return
+  }
+
   // works一括upsert
-  const works = items.map(item => ({
+  const works = targetItems.map(item => ({
     id: item.content_id,
     title: item.title,
     affiliate_url: item.affiliateURL,
@@ -51,6 +65,7 @@ async function saveWorksBulk(items: any[]) {
     updated_at: new Date(),
   }))
   await supabase.from('works').upsert(works, { onConflict: 'id' })
+  items = targetItems
 
   // genres一括upsert
   const genreMap = new Map<string, string>()
@@ -173,7 +188,7 @@ export async function GET(request: NextRequest) {
         const currentOffset = startOffset + (i * 100)
         const items = await fetchWorks({ hits: '100', sort: 'date', offset: String(currentOffset), article: 'actress', article_id: actressId })
         if (items.length === 0) break
-        await saveWorksBulk(items)
+        await saveWorksBulk(items, true)
         totalSaved += items.length
         await sleep(200)
       }
