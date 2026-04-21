@@ -31,6 +31,8 @@ const TOP_GENRES_COUNT = 5
 const RECOMMEND_PER_GENRE = 6
 const MAX_DISPLAY = 12
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
 export default function RecommendedActresses({ compact = false }: { compact?: boolean }) {
   const router = useRouter()
   const [favorites, setFavorites] = useState<Favorite[]>([])
@@ -65,15 +67,16 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
     setLoading(true)
 
     const run = async () => {
-      // 1. お気に入り女優の作品を全員分取得
-      const allWorks = await Promise.all(
-        favorites.map(fav =>
-          fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=${WORKS_PER_ACTRESS}&sort=rank&offset=1`)
-            .then(r => r.json())
-            .then(d => (d.result?.items ?? []) as Work[])
-            .catch(() => [] as Work[])
-        )
-      )
+      // 1. お気に入り女優の作品を順番に取得（レート制限対策）
+      const allWorks: Work[][] = []
+      for (const fav of favorites) {
+        const works = await fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=${WORKS_PER_ACTRESS}&sort=rank&offset=1`)
+          .then(r => r.json())
+          .then(d => (d.result?.items ?? []) as Work[])
+          .catch(() => [] as Work[])
+        allWorks.push(works)
+        await sleep(300)
+      }
 
       // 2. ジャンル出現回数を集計
       const genreCount = new Map<string, number>()
@@ -102,13 +105,13 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
       const favNamesSet = new Set(favorites.map(f => f.actress_name))
       const actressMap = new Map<string, ActressInfo>()
 
-      const genreResults = await Promise.all(
-        topGenresArr.map(async (g) => {
-          const res = await fetch(`/api/dmm?keyword=${encodeURIComponent(g.name)}&hits=${RECOMMEND_PER_GENRE * 4}&sort=rank&offset=1`)
-          const data = await res.json()
-          return { genre: g.name, items: (data.result?.items ?? []) as Work[] }
-        })
-      )
+      const genreResults: { genre: string; items: Work[] }[] = []
+      for (const g of topGenresArr) {
+        await sleep(300)
+        const res = await fetch(`/api/dmm?keyword=${encodeURIComponent(g.name)}&hits=${RECOMMEND_PER_GENRE * 4}&sort=rank&offset=1`)
+        const data = await res.json()
+        genreResults.push({ genre: g.name, items: (data.result?.items ?? []) as Work[] })
+      }
 
       // 5. 各作品から女優を抽出（お気に入り女優は除外）
       genreResults.forEach(({ genre, items }) => {
@@ -140,24 +143,24 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
         .slice(0, MAX_DISPLAY)
 
       // 7. 各女優の画像を取得（actress_idで検索）
-      const withImages = await Promise.all(
-        candidates.map(async (a) => {
-          try {
-            const res = await fetch(`/api/dmm-actress?actress_id=${a.id}`)
-            const data = await res.json()
-            const found = data.result?.actress?.[0]
-            return {
-              ...a,
-              imageUrl: found?.imageUrl ?? '',
-              reason: a.matchedGenres.length === 1
-                ? `${a.matchedGenres[0]}が好きなあなたへ`
-                : `${a.matchedGenres.slice(0, 2).join('・')}系のあなたへ`,
-            }
-          } catch {
-            return { ...a, reason: a.matchedGenres[0] + 'が好きなあなたへ', imageUrl: '' }
-          }
-        })
-      )
+      const withImages: ActressInfo[] = []
+      for (const a of candidates) {
+        await sleep(200)
+        try {
+          const res = await fetch(`/api/dmm-actress?actress_id=${a.id}`)
+          const data = await res.json()
+          const found = data.result?.actress?.[0]
+          withImages.push({
+            ...a,
+            imageUrl: found?.imageUrl ?? '',
+            reason: a.matchedGenres.length === 1
+              ? `${a.matchedGenres[0]}が好きなあなたへ`
+              : `${a.matchedGenres.slice(0, 2).join('・')}系のあなたへ`,
+          })
+        } catch {
+          withImages.push({ ...a, reason: a.matchedGenres[0] + 'が好きなあなたへ', imageUrl: '' })
+        }
+      }
 
       // 画像があるものだけ表示
       setRecommended(withImages.filter(a => a.imageUrl))
