@@ -80,64 +80,33 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const type = new URL(request.url).searchParams.get('type') ?? 'all'
-  const results: Record<string, number> = {}
+  const url = new URL(request.url)
+  const type = url.searchParams.get('type') ?? 'works'
+  const sort = url.searchParams.get('sort') ?? 'rank'
+  const offset = parseInt(url.searchParams.get('offset') ?? '1')
+  const hits = 100
+  const batches = parseInt(url.searchParams.get('batches') ?? '5') // 1回で何バッチ取得するか
+
+  const results: Record<string, any> = {}
 
   try {
-    if (type === 'all' || type === 'works') {
-      // 人気作品TOP200
-      for (let offset = 1; offset <= 200; offset += 100) {
-        const items = await fetchWorks({ hits: '100', sort: 'rank', offset: String(offset) })
+    if (type === 'works') {
+      // 指定offsetから batches×100件取得
+      let totalSaved = 0
+      for (let i = 0; i < batches; i++) {
+        const currentOffset = offset + (i * hits)
+        const items = await fetchWorks({ hits: String(hits), sort, offset: String(currentOffset) })
+        if (items.length === 0) break
         await saveWorks(items)
-        await sleep(500)
+        totalSaved += items.length
+        await sleep(400)
       }
-      // 最新作品200件
-      for (let offset = 1; offset <= 200; offset += 100) {
-        const items = await fetchWorks({ hits: '100', sort: 'date', offset: String(offset) })
-        await saveWorks(items)
-        await sleep(500)
-      }
-      results.works = 400
+      results.saved = totalSaved
+      results.next_offset = offset + (batches * hits)
     }
 
-    if (type === 'all' || type === 'actresses') {
-      // 人気女優を取得してpopular_rankを保存（sort=popularは非対応のためname順で取得）
-      const fetchPage = async (offset: number) => {
-        const p = new URLSearchParams({
-          api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
-          hits: '100', sort: 'name', offset: String(offset), output: 'json',
-        })
-        const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p.toString()}`, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-        })
-        const data = await res.json()
-        return data.result?.actress ?? []
-      }
-
-      await sleep(200)
-      const page1 = await fetchPage(1)
-      await sleep(200)
-      const page2 = await fetchPage(101)
-      const popularActresses = [...page1, ...page2]
-      for (let i = 0; i < popularActresses.length; i++) {
-        const a = popularActresses[i]
-        await supabase.from('actresses').upsert({
-          id: String(a.id),
-          name: a.name,
-          ruby: a.ruby,
-          image_url: (a.imageURL?.large ?? a.imageURL?.small ?? '').replace('http://', 'https://') || null,
-          bust: a.bust ? parseInt(a.bust) : null,
-          waist: a.waist ? parseInt(a.waist) : null,
-          hip: a.hip ? parseInt(a.hip) : null,
-          height: a.height ? parseInt(a.height) : null,
-          cup: a.cup,
-          popular_rank: i + 1,
-          updated_at: new Date(),
-        }, { onConflict: 'id' })
-      }
-      results.actresses_popular = popularActresses.length
-
-      // 画像URLがない女優を追加で更新
+    if (type === 'actresses') {
+      // 画像URLがない女優を更新
       const { data: actressesWithoutImage } = await supabase
         .from('actresses')
         .select('id, name')
@@ -162,6 +131,13 @@ export async function GET(request: NextRequest) {
         }
       }
       results.actresses_updated = updated
+    }
+
+    if (type === 'daily') {
+      // 毎日の差分更新：最新作100件のみ
+      const items = await fetchWorks({ hits: '100', sort: 'date', offset: '1' })
+      await saveWorks(items)
+      results.saved = items.length
     }
 
     return NextResponse.json({ success: true, results })
