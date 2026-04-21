@@ -119,13 +119,23 @@ function Fetch-AllForActress($actress) {
     return @{ name = $actress.name; saved = $totalSaved }
 }
 
+# 進捗ログファイル（再開用）
+$progressFile = "$PSScriptRoot\direct-fetch-progress.txt"
+$completedIds = @{}
+if (Test-Path $progressFile) {
+    Get-Content $progressFile | ForEach-Object { $completedIds[$_] = $true }
+    Write-Host "Resume mode: $($completedIds.Count) actresses already completed, skipping them." -ForegroundColor Yellow
+}
+
 # 女優一覧取得
 Write-Host "Fetching actress list from Supabase..." -ForegroundColor Cyan
 $actressUrl = "$SUPABASE_URL/rest/v1/rpc/get_actresses_by_work_count"
 $actressRes = Invoke-WebRequest -Uri $actressUrl -Method Post -Headers $supabaseHeaders -Body '{"p_limit":200}' -UseBasicParsing
 $actresses = $actressRes.Content | ConvertFrom-Json
 
-Write-Host "Total: $($actresses.Count) actresses, parallel: $PARALLEL" -ForegroundColor Cyan
+# 処理済みをフィルタ
+$actresses = $actresses | Where-Object { -not $completedIds[$_.id.ToString()] }
+Write-Host "Remaining: $($actresses.Count) actresses to process, parallel: $PARALLEL" -ForegroundColor Cyan
 
 $total = 0
 for ($i = 0; $i -lt $actresses.Count; $i += $PARALLEL) {
@@ -201,7 +211,7 @@ for ($i = 0; $i -lt $actresses.Count; $i += $PARALLEL) {
                 $offset += 100
                 Start-Sleep -Milliseconds 100
             }
-            return @{ name = $actress.name; saved = $totalSaved }
+            return @{ id = $actress.id.ToString(); name = $actress.name; saved = $totalSaved }
         } -ArgumentList $actress, $DMM_API_ID, $DMM_AFFILIATE_ID, $SUPABASE_URL, $SUPABASE_KEY
     }
     
@@ -212,9 +222,15 @@ for ($i = 0; $i -lt $actresses.Count; $i += $PARALLEL) {
         if ($r) {
             Write-Host "[$([Math]::Min($i+$PARALLEL, $actresses.Count))/$($actresses.Count)] $($r.name): $($r.saved) new works" -ForegroundColor Green
             $total += $r.saved
+            # 完了した女優IDをログに追記（再開時スキップ用）
+            Add-Content -Path $progressFile -Value $r.id
         }
     }
 }
 
 Write-Host "Total new works saved: $total" -ForegroundColor Cyan
 Write-Host "Done!" -ForegroundColor Cyan
+
+# 全完了時はログファイルを削除
+if (Test-Path $progressFile) { Remove-Item $progressFile }
+Write-Host "Progress log cleared." -ForegroundColor Gray
