@@ -10,15 +10,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 async function fetchWorks(params: Record<string, string>) {
-  const p = new URLSearchParams({
+  const base: Record<string, string> = {
     api_id: DMM_API_ID,
     affiliate_id: DMM_AFFILIATE_ID,
     site: 'FANZA',
     service: 'digital',
     floor: 'videoa',
     output: 'json',
-    ...params,
-  })
+  }
+
+  // article/article_idはarray形式で送る
+  const { article, article_id, ...rest } = params
+  const merged = { ...base, ...rest }
+  const p = new URLSearchParams(merged)
+  if (article && article_id) {
+    p.append('article[]', article)
+    p.append('article_id[]', article_id)
+  }
+
   const res = await fetch(`https://api.dmm.com/affiliate/v3/ItemList?${p.toString()}`, {
     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
   })
@@ -151,6 +160,25 @@ export async function GET(request: NextRequest) {
       const items = await fetchWorks({ hits: '100', sort: 'date', offset: '1' })
       await saveWorksBulk(items)
       results.saved = items.length
+    }
+
+    if (type === 'by_actress') {
+      // 指定女優IDの作品を大量取得
+      const actressId = url.searchParams.get('actress_id') ?? ''
+      const startOffset = parseInt(url.searchParams.get('offset') ?? '1')
+      if (!actressId) return NextResponse.json({ error: 'actress_id required' }, { status: 400 })
+
+      let totalSaved = 0
+      for (let i = 0; i < 20; i++) { // 20バッチ×100件=2000件
+        const currentOffset = startOffset + (i * 100)
+        const items = await fetchWorks({ hits: '100', sort: 'date', offset: String(currentOffset), article: 'actress', article_id: actressId })
+        if (items.length === 0) break
+        await saveWorksBulk(items)
+        totalSaved += items.length
+        await sleep(200)
+      }
+      results.saved = totalSaved
+      results.next_offset = startOffset + 2000
     }
 
     return NextResponse.json({ success: true, results })
