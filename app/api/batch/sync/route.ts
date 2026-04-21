@@ -101,7 +101,42 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'all' || type === 'actresses') {
-      // 画像URLがない女優を取得して更新
+      // 人気女優を取得してpopular_rankを保存
+      const p1 = new URLSearchParams({
+        api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
+        hits: '100', sort: 'popular', offset: '1', output: 'json',
+      })
+      await sleep(300)
+      const p2 = new URLSearchParams({
+        api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
+        hits: '100', sort: 'popular', offset: '101', output: 'json',
+      })
+
+      const [res1, res2] = await Promise.all([
+        fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p1.toString()}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
+        fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p2.toString()}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()),
+      ])
+
+      const popularActresses = [...(res1.result?.actress ?? []), ...(res2.result?.actress ?? [])]
+      for (let i = 0; i < popularActresses.length; i++) {
+        const a = popularActresses[i]
+        await supabase.from('actresses').upsert({
+          id: String(a.id),
+          name: a.name,
+          ruby: a.ruby,
+          image_url: (a.imageURL?.large ?? a.imageURL?.small ?? '').replace('http://', 'https://') || null,
+          bust: a.bust ? parseInt(a.bust) : null,
+          waist: a.waist ? parseInt(a.waist) : null,
+          hip: a.hip ? parseInt(a.hip) : null,
+          height: a.height ? parseInt(a.height) : null,
+          cup: a.cup,
+          popular_rank: i + 1,
+          updated_at: new Date(),
+        }, { onConflict: 'id' })
+      }
+      results.actresses_popular = popularActresses.length
+
+      // 画像URLがない女優を追加で更新
       const { data: actressesWithoutImage } = await supabase
         .from('actresses')
         .select('id, name')

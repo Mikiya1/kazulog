@@ -112,6 +112,8 @@ export async function getPopularActresses(limit = 30): Promise<{ id: string; nam
     .from('actresses')
     .select('id, name, image_url')
     .not('image_url', 'is', null)
+    .not('popular_rank', 'is', null)
+    .order('popular_rank', { ascending: true })
     .limit(limit)
 
   return data ?? []
