@@ -211,7 +211,9 @@ export default function FavoritesPage() {
             <button style={tabStyle('by-actress') as React.CSSProperties} onClick={() => setTab('by-actress')}>
               👩 女優別
             </button>
-
+            <button style={tabStyle('recommended') as React.CSSProperties} onClick={() => setTab('recommended')}>
+              ✨ おすすめ
+            </button>
           </div>
         </div>
 
