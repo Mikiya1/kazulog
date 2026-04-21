@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
+import { getActressesByInitial, getPopularActresses } from '../lib/db'
 
 type Actress = {
   id: string
@@ -63,27 +64,33 @@ export default function ActressesPage() {
     setActresses([])
 
     if (keyword) {
-      const res = await fetch(`/api/dmm-actress?keyword=${encodeURIComponent(keyword)}&hits=${HITS}&sort=name&offset=${(page - 1) * HITS + 1}`)
-      const data = await res.json()
-      setActresses((data.result?.actress ?? []).filter((a: Actress) => a.imageUrl))
-      setTotalCount(Number(data.result?.total_count ?? 0))
+      // キーワード検索はSupabaseから
+      const { data, count } = await supabase
+        .from('actresses')
+        .select('id, name, ruby, image_url', { count: 'exact' })
+        .ilike('name', `%${keyword}%`)
+        .not('image_url', 'is', null)
+        .order('ruby', { ascending: true })
+        .range((page - 1) * HITS, page * HITS - 1)
+      setActresses((data ?? []).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: [] })))
+      setTotalCount(count ?? 0)
       setLoading(false)
       return
     }
 
     if (tab === 'rank') {
-      const res = await fetch(`/api/dmm-actress?mode=featured`)
-      const data = await res.json()
-      setActresses((data.result?.actress ?? []).filter((a: Actress) => a.imageUrl))
+      // 人気タブはSupabaseから
+      const data = await getPopularActresses(100)
+      setActresses(data.map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: [] })))
       setTotalCount(0)
       setLoading(false)
       return
     }
 
-    const res = await fetch(`/api/dmm-actress?initial=${encodeURIComponent(selectedKana)}&hits=${HITS}&sort=name&offset=${(page - 1) * HITS + 1}`)
-    const data = await res.json()
-    setActresses((data.result?.actress ?? []).filter((a: Actress) => a.imageUrl))
-    setTotalCount(Number(data.result?.total_count ?? 0))
+    // 50音タブはSupabaseから
+    const { actresses: data, total } = await getActressesByInitial(selectedKana, HITS, (page - 1) * HITS)
+    setActresses(data.filter((a: any) => a.image_url).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: [] })))
+    setTotalCount(total)
     setLoading(false)
   }, [tab, selectedKana, keyword, page])
 

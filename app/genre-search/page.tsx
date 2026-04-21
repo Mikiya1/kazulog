@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
+import { getWorksByGenreId, getWorksByActressId } from '../lib/db'
 
 type Favorite = {
   actress_id: string
@@ -310,17 +311,27 @@ export default function GenreSearchPage() {
     if (!isGenreOnlySearch) return
     setLoading(true)
     setWorks([])
-    const offset = (page - 1) * PER_PAGE + 1
-    const res = await fetch(`/api/dmm?hits=${PER_PAGE}&sort=${sortOrder}&offset=${offset}&genre=${primaryGenreId}`)
-    const data = await res.json()
-    const items: Work[] = data.result?.items ?? []
+    const offset = (page - 1) * PER_PAGE
+    const { works: items } = await getWorksByGenreId(primaryGenreId, sortOrder, PER_PAGE, offset)
     const filtered = selectedGenres.length > 1
-      ? items.filter((w: Work) => {
-          const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+      ? items.filter(w => {
+          const workGenreIds = w.genres.map(g => g.id)
           return selectedGenres.every(gId => workGenreIds.includes(gId))
         })
       : items
-    setWorks(filtered)
+    const convertedWorks = filtered.map(w => ({
+      content_id: w.id,
+      title: w.title,
+      affiliateURL: w.affiliate_url,
+      imageURL: { large: w.image_large, small: w.image_small },
+      date: w.date ?? '',
+      volume: w.volume ? String(w.volume) : undefined,
+      iteminfo: {
+        actress: w.actresses.map(a => ({ id: Number(a.id), name: a.name })),
+        genre: w.genres.map(g => ({ id: Number(g.id), name: g.name })),
+      },
+    })) as Work[]
+    setWorks(convertedWorks)
     setLoading(false)
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
   }
@@ -396,23 +407,33 @@ export default function GenreSearchPage() {
     const genreIds = selectedGenres.join(',')
 
     if (selectedFavorites.length === 0) {
-      // 初回は20件だけ取得して即表示、ページネーションで追加読み込み
+      // Supabaseからジャンル検索
       const primaryGenre = selectedGenres[0]
-      const firstRes = await fetch(`/api/dmm?hits=20&sort=${sortOrder}&offset=1&genre=${primaryGenre}`)
-      const firstData = await firstRes.json()
-      const firstItems: Work[] = firstData.result?.items ?? []
-      const total = Number(firstData.result?.total_count ?? 0)
+      const { works: items, total } = await getWorksByGenreId(primaryGenre, sortOrder, PER_PAGE, 0)
 
       // 複数ジャンル選択時はフロントでANDフィルタ
       const filtered = selectedGenres.length > 1
-        ? firstItems.filter((w: Work) => {
-            const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
+        ? items.filter(w => {
+            const workGenreIds = w.genres.map(g => g.id)
             return selectedGenres.every(gId => workGenreIds.includes(gId))
           })
-        : firstItems
+        : items
 
-      setWorks(filtered)
-      setGenreOffset(21)
+      const convertedWorks = filtered.map(w => ({
+        content_id: w.id,
+        title: w.title,
+        affiliateURL: w.affiliate_url,
+        imageURL: { large: w.image_large, small: w.image_small },
+        date: w.date ?? '',
+        volume: w.volume ? String(w.volume) : undefined,
+        iteminfo: {
+          actress: w.actresses.map(a => ({ id: Number(a.id), name: a.name })),
+          genre: w.genres.map(g => ({ id: Number(g.id), name: g.name })),
+        },
+      })) as Work[]
+
+      setWorks(convertedWorks)
+      setGenreOffset(PER_PAGE)
       setGenreTotal(total)
       setPrimaryGenreId(primaryGenre)
       setIsGenreOnlySearch(true)
@@ -420,43 +441,35 @@ export default function GenreSearchPage() {
       return
     }
 
-    // 女優×ジャンルをAPIで直接絞り込み（複数ジャンルは最初のジャンルで絞り、残りはフロントでフィルタ）
-    const primaryGenre = selectedGenres[0]
-
-    const fetchWorksForActress = async (actressId: string) => {
-      const firstRes = await fetch(`/api/dmm?actress_id=${actressId}&genre=${primaryGenre}&hits=100&sort=rank&offset=1`)
-      const firstData = await firstRes.json()
-      const total = Number(firstData.result?.total_count ?? 0)
-      const firstItems = firstData.result?.items ?? []
-      if (total <= 100) return firstItems
-      const offsets: number[] = []
-      for (let i = 101; i <= Math.min(total, 500); i += 100) offsets.push(i)
-      const rest = await Promise.all(
-        offsets.map(offset =>
-          fetch(`/api/dmm?actress_id=${actressId}&genre=${primaryGenre}&hits=100&sort=rank&offset=${offset}`)
-            .then(r => r.json())
-            .then(d => d.result?.items ?? [])
-        )
-      )
-      return [...firstItems, ...rest.flat()]
-    }
-
+    // 女優×ジャンルをSupabaseで検索
     const results = await Promise.all(
-      selectedFavorites.map(f => fetchWorksForActress(f.actress_id))
+      selectedFavorites.map(f => getWorksByActressId(f.actress_id, sortOrder, 100, 0))
     )
     const merged = results.flat()
-    const unique = merged.filter((w: Work, i: number, arr: Work[]) =>
-      arr.findIndex((b: Work) => b.content_id === w.content_id) === i
-    )
-    // 追加ジャンルがあればフロントでフィルタリング
-    const filtered = selectedGenres.length > 1
-      ? unique.filter((w: Work) => {
-          const workGenreIds = (w.iteminfo?.genre ?? []).map((g: { id: number }) => String(g.id))
-          return selectedGenres.every(gId => workGenreIds.includes(gId))
-        })
-      : unique
+    const uniqueMap = new Map(merged.map(w => [w.id, w]))
+    const unique = Array.from(uniqueMap.values())
+
+    // ジャンルフィルタ
+    const filtered = unique.filter(w => {
+      const workGenreIds = w.genres.map(g => g.id)
+      return selectedGenres.every(gId => workGenreIds.includes(gId))
+    })
+
+    const convertedWorks = filtered.map(w => ({
+      content_id: w.id,
+      title: w.title,
+      affiliateURL: w.affiliate_url,
+      imageURL: { large: w.image_large, small: w.image_small },
+      date: w.date ?? '',
+      volume: w.volume ? String(w.volume) : undefined,
+      iteminfo: {
+        actress: w.actresses.map(a => ({ id: Number(a.id), name: a.name })),
+        genre: w.genres.map(g => ({ id: Number(g.id), name: g.name })),
+      },
+    })) as Work[]
+
     setPartialResults([])
-    setWorks(filtered)
+    setWorks(convertedWorks)
     setLoading(false)
   }
 

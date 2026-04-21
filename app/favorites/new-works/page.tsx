@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../../components/Header'
 import { supabase } from '../../lib/supabase'
+import { getWorksByActressId } from '../../lib/db'
 
 type Favorite = {
   actress_id: string

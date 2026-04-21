@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
+import { getWorksByActressId } from '../lib/db'
 import RecommendedActresses from '../components/RecommendedActresses'
 
 type Favorite = {
@@ -83,25 +84,30 @@ export default function FavoritesPage() {
       const favNames = new Set(favorites.map(f => f.actress_name))
       Promise.all(
         favorites.map(fav =>
-          fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=${HITS}&sort=date&offset=1`)
-            .then(r => r.json())
-            .then(data => ({ fav, items: (data.result?.items ?? []) as Work[] }))
-            .catch(() => ({ fav, items: [] as Work[] }))
+          getWorksByActressId(fav.actress_id, 'date', HITS, 0)
+            .then(items => ({ fav, items }))
+            .catch(() => ({ fav, items: [] }))
         )
       ).then(results => {
         const map = new Map<string, WorkWithActresses>()
         results.forEach(({ fav, items }) => {
           items.forEach(work => {
-            if (map.has(work.content_id)) {
-              const existing = map.get(work.content_id)!
+            if (map.has(work.id)) {
+              const existing = map.get(work.id)!
               if (!existing.matchedActresses.includes(fav.actress_name)) {
                 existing.matchedActresses.push(fav.actress_name)
               }
             } else {
-              const workActresses = work.iteminfo?.actress?.map(a => a.name) ?? []
+              const workActresses = work.actresses.map(a => a.name)
               const matched = workActresses.filter(n => favNames.has(n))
-              map.set(work.content_id, {
-                ...work,
+              map.set(work.id, {
+                content_id: work.id,
+                title: work.title,
+                affiliateURL: work.affiliate_url,
+                imageURL: { large: work.image_large, small: work.image_small },
+                date: work.date ?? '',
+                volume: work.volume ? String(work.volume) : undefined,
+                iteminfo: { actress: work.actresses.map(a => ({ id: Number(a.id), name: a.name })) },
                 matchedActresses: matched.length > 0 ? matched : [fav.actress_name],
               })
             }
@@ -119,11 +125,17 @@ export default function FavoritesPage() {
       setByActressFetched(true)
       setActressWorks(favorites.map(a => ({ actress: a, works: [], loading: true, error: false })))
       favorites.forEach((fav, i) => {
-        fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=${HITS}&sort=date&offset=1`)
-          .then(r => r.json())
-          .then(data => {
+        getWorksByActressId(fav.actress_id, 'date', HITS, 0)
+          .then(items => {
             setActressWorks(prev => prev.map((aw, j) =>
-              j === i ? { ...aw, works: data.result?.items ?? [], loading: false } : aw
+              j === i ? { ...aw, works: items.map(w => ({
+                content_id: w.id,
+                title: w.title,
+                affiliateURL: w.affiliate_url,
+                imageURL: { large: w.image_large, small: w.image_small },
+                date: w.date ?? '',
+                volume: w.volume ? String(w.volume) : undefined,
+              })), loading: false } : aw
             ))
           })
           .catch(() => {
