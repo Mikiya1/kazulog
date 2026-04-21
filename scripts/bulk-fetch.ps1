@@ -3,8 +3,8 @@ $base = "http://localhost:3000/api/batch/sync"
 
 Write-Host "Start bulk fetch" -ForegroundColor Cyan
 
-for ($offset = 6901; $offset -le 49901; $offset += 500) {
-    $url = "${base}?type=works&sort=rank&offset=${offset}&batches=5"
+for ($offset = 20901; $offset -le 49901; $offset += 5000) {
+    $url = "${base}?type=works&sort=rank&offset=${offset}&batches=50"
     Write-Host "offset=${offset}..." -NoNewline
     try {
         $res = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing
