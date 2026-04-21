@@ -26,51 +26,59 @@ async function fetchWorks(params: Record<string, string>) {
   return data.result?.items ?? []
 }
 
-async function fetchActressByName(name: string) {
-  const p = new URLSearchParams({
-    api_id: DMM_API_ID,
-    affiliate_id: DMM_AFFILIATE_ID,
-    output: 'json',
-    hits: '1',
-    keyword: name,
+async function saveWorksBulk(items: any[]) {
+  if (items.length === 0) return
+
+  // works一括upsert
+  const works = items.map(item => ({
+    id: item.content_id,
+    title: item.title,
+    affiliate_url: item.affiliateURL,
+    image_large: item.imageURL?.large,
+    image_small: item.imageURL?.small,
+    volume: item.volume ? parseInt(item.volume) : null,
+    date: item.date ? new Date(item.date) : null,
+    price: item.prices?.price,
+    updated_at: new Date(),
+  }))
+  await supabase.from('works').upsert(works, { onConflict: 'id' })
+
+  // genres一括upsert
+  const genreMap = new Map<string, string>()
+  const workGenres: { work_id: string; genre_id: string }[] = []
+  items.forEach(item => {
+    (item.iteminfo?.genre ?? []).forEach((g: any) => {
+      genreMap.set(String(g.id), g.name)
+      workGenres.push({ work_id: item.content_id, genre_id: String(g.id) })
+    })
   })
-  const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p.toString()}`, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+  if (genreMap.size > 0) {
+    await supabase.from('genres').upsert(
+      Array.from(genreMap.entries()).map(([id, name]) => ({ id, name })),
+      { onConflict: 'id' }
+    )
+  }
+  if (workGenres.length > 0) {
+    await supabase.from('work_genres').upsert(workGenres, { onConflict: 'work_id,genre_id' })
+  }
+
+  // actresses一括upsert
+  const actressMap = new Map<string, { id: string; name: string; ruby: string }>()
+  const workActresses: { work_id: string; actress_id: string }[] = []
+  items.forEach(item => {
+    (item.iteminfo?.actress ?? []).forEach((a: any) => {
+      actressMap.set(String(a.id), { id: String(a.id), name: a.name, ruby: a.ruby })
+      workActresses.push({ work_id: item.content_id, actress_id: String(a.id) })
+    })
   })
-  const data = await res.json()
-  return data.result?.actress?.[0] ?? null
-}
-
-async function saveWorks(items: any[]) {
-  for (const item of items) {
-    await supabase.from('works').upsert({
-      id: item.content_id,
-      title: item.title,
-      affiliate_url: item.affiliateURL,
-      image_large: item.imageURL?.large,
-      image_small: item.imageURL?.small,
-      volume: item.volume ? parseInt(item.volume) : null,
-      date: item.date ? new Date(item.date) : null,
-      price: item.prices?.price,
-      updated_at: new Date(),
-    }, { onConflict: 'id' })
-
-    const genres = item.iteminfo?.genre ?? []
-    for (const g of genres) {
-      await supabase.from('genres').upsert({ id: String(g.id), name: g.name }, { onConflict: 'id' })
-      await supabase.from('work_genres').upsert({ work_id: item.content_id, genre_id: String(g.id) }, { onConflict: 'work_id,genre_id' })
-    }
-
-    const actresses = item.iteminfo?.actress ?? []
-    for (const a of actresses) {
-      await supabase.from('actresses').upsert({
-        id: String(a.id),
-        name: a.name,
-        ruby: a.ruby,
-        updated_at: new Date(),
-      }, { onConflict: 'id' })
-      await supabase.from('work_actresses').upsert({ work_id: item.content_id, actress_id: String(a.id) }, { onConflict: 'work_id,actress_id' })
-    }
+  if (actressMap.size > 0) {
+    await supabase.from('actresses').upsert(
+      Array.from(actressMap.values()).map(a => ({ ...a, updated_at: new Date() })),
+      { onConflict: 'id' }
+    )
+  }
+  if (workActresses.length > 0) {
+    await supabase.from('work_actresses').upsert(workActresses, { onConflict: 'work_id,actress_id' })
   }
 }
 
@@ -84,29 +92,27 @@ export async function GET(request: NextRequest) {
   const type = url.searchParams.get('type') ?? 'works'
   const sort = url.searchParams.get('sort') ?? 'rank'
   const offset = parseInt(url.searchParams.get('offset') ?? '1')
+  const batches = parseInt(url.searchParams.get('batches') ?? '5')
   const hits = 100
-  const batches = parseInt(url.searchParams.get('batches') ?? '5') // 1回で何バッチ取得するか
 
   const results: Record<string, any> = {}
 
   try {
     if (type === 'works') {
-      // 指定offsetから batches×100件取得
       let totalSaved = 0
       for (let i = 0; i < batches; i++) {
         const currentOffset = offset + (i * hits)
         const items = await fetchWorks({ hits: String(hits), sort, offset: String(currentOffset) })
         if (items.length === 0) break
-        await saveWorks(items)
+        await saveWorksBulk(items)
         totalSaved += items.length
-        await sleep(400)
+        await sleep(300)
       }
       results.saved = totalSaved
       results.next_offset = offset + (batches * hits)
     }
 
     if (type === 'actresses') {
-      // 画像URLがない女優を更新
       const { data: actressesWithoutImage } = await supabase
         .from('actresses')
         .select('id, name')
@@ -115,8 +121,16 @@ export async function GET(request: NextRequest) {
 
       let updated = 0
       for (const actress of (actressesWithoutImage ?? [])) {
-        await sleep(300)
-        const a = await fetchActressByName(actress.name)
+        await sleep(200)
+        const p = new URLSearchParams({
+          api_id: DMM_API_ID, affiliate_id: DMM_AFFILIATE_ID,
+          output: 'json', hits: '1', keyword: actress.name,
+        })
+        const res = await fetch(`https://api.dmm.com/affiliate/v3/ActressSearch?${p.toString()}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+        })
+        const data = await res.json()
+        const a = data.result?.actress?.[0]
         if (a && (a.imageURL?.large || a.imageURL?.small)) {
           await supabase.from('actresses').update({
             image_url: (a.imageURL?.large ?? a.imageURL?.small ?? '').replace('http://', 'https://'),
@@ -134,9 +148,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'daily') {
-      // 毎日の差分更新：最新作100件のみ
       const items = await fetchWorks({ hits: '100', sort: 'date', offset: '1' })
-      await saveWorks(items)
+      await saveWorksBulk(items)
       results.saved = items.length
     }
 
