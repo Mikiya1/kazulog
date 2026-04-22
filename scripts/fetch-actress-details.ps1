@@ -103,7 +103,7 @@ for ($i = 0; $i -lt $actresses.Count; $i += $PARALLEL) {
 
                 return @{ id = $actress.id.ToString(); name = $actress.name; status = "ok" }
             } catch {
-                return @{ id = $actress.id.ToString(); name = $actress.name; status = "error" }
+                return @{ id = $actress.id.ToString(); name = $actress.name; status = "error"; msg = $_.Exception.Message }
             }
         } -ArgumentList $actress, $DMM_API_ID, $DMM_AFFILIATE_ID, $SUPABASE_URL, $SUPABASE_KEY
     }
@@ -120,7 +120,7 @@ for ($i = 0; $i -lt $actresses.Count; $i += $PARALLEL) {
             } elseif ($r.status -eq "not_found") {
                 Write-Host "[$($i + $PARALLEL)/$($actresses.Count) $pct%] $($r.name): not found in DMM" -ForegroundColor Yellow
             } else {
-                Write-Host "[$($i + $PARALLEL)/$($actresses.Count) $pct%] $($r.name): error" -ForegroundColor Red
+                Write-Host "[$($i + $PARALLEL)/$($actresses.Count) $pct%] $($r.name): error - $($r.msg)" -ForegroundColor Red
                 $errors++
             }
             Add-Content -Path $progressFile -Value $r.id
