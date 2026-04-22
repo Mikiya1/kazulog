@@ -78,15 +78,20 @@ foreach ($actress in $actresses) {
 
         $a = $data[0]
 
-        # Supabaseに更新
-        $updateBody = @{
-            bust     = if ($a.bust) { [int]$a.bust } else { $null }
-            waist    = if ($a.waist) { [int]$a.waist } else { $null }
-            hip      = if ($a.hip) { [int]$a.hip } else { $null }
-            height   = if ($a.height) { [int]$a.height } else { $null }
-            cup      = if ($a.cup) { $a.cup } else { $null }
-            birthday = if ($a.birthday) { $a.birthday } else { $null }
-        } | ConvertTo-Json -Compress
+        # 値があるフィールドだけbodyに含める
+        $updateHash = @{}
+        if ($a.bust)     { $updateHash["bust"]     = [int]$a.bust }
+        if ($a.waist)    { $updateHash["waist"]    = [int]$a.waist }
+        if ($a.hip)      { $updateHash["hip"]      = [int]$a.hip }
+        if ($a.height)   { $updateHash["height"]   = [int]$a.height }
+        if ($a.cup)      { $updateHash["cup"]      = [string]$a.cup }
+        if ($a.birthday) { $updateHash["birthday"] = [string]$a.birthday }
+        if ($updateHash.Count -eq 0) {
+            Write-Host "[$i/$($actresses.Count) $pct%] $($actress.name): no data" -ForegroundColor Gray
+            Add-Content -Path $progressFile -Value $actress.id.ToString()
+            continue
+        }
+        $updateBody = $updateHash | ConvertTo-Json -Compress
 
         $patchUrl = $SUPABASE_URL + "/rest/v1/actresses?id=eq." + $actressId
         Invoke-WebRequest -Uri $patchUrl `
