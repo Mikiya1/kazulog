@@ -6,7 +6,6 @@ $SUPABASE_KEY = $env:SUPABASE_SERVICE_ROLE_KEY
 
 if (-not $SUPABASE_KEY) {
     Write-Host "ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable not set" -ForegroundColor Red
-    Write-Host "Set it with: `$env:SUPABASE_SERVICE_ROLE_KEY = 'your-key'" -ForegroundColor Yellow
     exit 1
 }
 
@@ -17,7 +16,6 @@ $supabaseHeaders = @{
     "Prefer"        = "resolution=merge-duplicates"
 }
 
-$PARALLEL = 10
 $progressFile = "$PSScriptRoot\fetch-actress-details-progress.txt"
 
 # 進捗ログ読み込み（再開用）
@@ -25,20 +23,19 @@ $completedIds = [hashtable]@{}
 if (Test-Path $progressFile) {
     $lines = Get-Content $progressFile
     if ($lines) {
-        @($lines) | ForEach-Object { $completedIds[$_] = $true }
+        @($lines) | ForEach-Object { $completedIds[$_.Trim()] = $true }
     }
-    Write-Host "Resume mode: $($completedIds.Count) actresses already completed, skipping." -ForegroundColor Yellow
+    Write-Host "Resume mode: $($completedIds.Count) actresses already completed." -ForegroundColor Yellow
 }
 
-# 未取得の女優一覧をSupabaseから取得（bustがnullの女優）
+# 未取得の女優一覧をSupabaseから取得
 Write-Host "Fetching actresses without detail data..." -ForegroundColor Cyan
 $pageSize = 1000
 $allActresses = [System.Collections.ArrayList]@()
-
 $offset = 0
+
 while ($true) {
-    # RPC経由でページング取得
-    $body = "{""p_limit"":$pageSize,""p_offset"":$offset}" 
+    $body = "{`"p_limit`":$pageSize,`"p_offset`":$offset}"
     try {
         $res = Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/rpc/get_actresses_without_details" `
             -Method Post -Headers $supabaseHeaders -Body $body -UseBasicParsing
@@ -53,85 +50,61 @@ while ($true) {
         break
     }
 }
-$allActresses = @($allActresses)
 
 # 処理済みをスキップ
-if ($null -eq $completedIds) { $completedIds = @{} }
-$actresses = $allActresses | Where-Object { -not $completedIds[$_.id.ToString()] }
-Write-Host "Total: $($actresses.Count) actresses to process, parallel: $PARALLEL" -ForegroundColor Cyan
+$actresses = @($allActresses | Where-Object { -not $completedIds[$_.id.ToString()] })
+Write-Host "Total: $($actresses.Count) actresses to process" -ForegroundColor Cyan
 
 $total = 0
 $errors = 0
+$i = 0
 
-for ($i = 0; $i -lt $actresses.Count; $i += $PARALLEL) {
-    $batch = $actresses[$i..([Math]::Min($i + $PARALLEL - 1, $actresses.Count - 1))]
+foreach ($actress in $actresses) {
+    $i++
+    $pct = [Math]::Round($i / $actresses.Count * 100, 1)
 
-    $jobs = $batch | ForEach-Object {
-        $actress = $_
-        Start-Job -ScriptBlock {
-            param($actress, $dmmId, $dmmAffi, $supaUrl, $supaKey)
+    try {
+        # DMM APIで女優詳細取得
+        $dmmUrl = "https://api.dmm.com/affiliate/v3/ActressSearch?api_id=$DMM_API_ID&affiliate_id=$DMM_AFFILIATE_ID&output=json&actress_id=$($actress.id)"
+        $dmmRes = Invoke-WebRequest -Uri $dmmUrl -UseBasicParsing -Headers @{"User-Agent" = "Mozilla/5.0"}
+        $data = ($dmmRes.Content | ConvertFrom-Json).result.actress
 
-            $headers = @{
-                "apikey"        = $supaKey
-                "Authorization" = "Bearer $supaKey"
-                "Content-Type"  = "application/json"
-                "Prefer"        = "resolution=merge-duplicates"
-            }
-
-            # DMM APIで女優詳細取得
-            $url = "https://api.dmm.com/affiliate/v3/ActressSearch?api_id=$dmmId&affiliate_id=$dmmAffi&output=json&actress_id=$($actress.id)"
-            try {
-                $res = Invoke-WebRequest -Uri $url -UseBasicParsing -Headers @{"User-Agent" = "Mozilla/5.0"}
-                $data = ($res.Content | ConvertFrom-Json).result.actress
-                if (-not $data -or $data.Count -eq 0) {
-                    return @{ id = $actress.id.ToString(); name = $actress.name; status = "not_found" }
-                }
-                $a = $data[0]
-
-                # Supabaseに更新
-                $body = @{
-                    bust     = if ($a.bust) { [int]$a.bust } else { $null }
-                    waist    = if ($a.waist) { [int]$a.waist } else { $null }
-                    hip      = if ($a.hip) { [int]$a.hip } else { $null }
-                    height   = if ($a.height) { [int]$a.height } else { $null }
-                    cup      = if ($a.cup) { $a.cup } else { $null }
-                    birthday = if ($a.birthday) { $a.birthday } else { $null }
-                } | ConvertTo-Json -Compress
-
-                $patchUrl = "$supaUrl/rest/v1/actresses?id=eq.$($actress.id)"
-                Invoke-WebRequest -Uri $patchUrl -Method Patch -Headers $headers -Body $body -UseBasicParsing | Out-Null
-
-                return @{ id = $actress.id.ToString(); name = $actress.name; status = "ok" }
-            } catch {
-                return @{ id = $actress.id.ToString(); name = $actress.name; status = "error"; msg = $_.Exception.Message }
-            }
-        } -ArgumentList $actress, $DMM_API_ID, $DMM_AFFILIATE_ID, $SUPABASE_URL, $SUPABASE_KEY
-    }
-
-    $results = $jobs | Wait-Job | Receive-Job
-    $jobs | Remove-Job
-
-    foreach ($r in $results) {
-        if ($r) {
-            $pct = [Math]::Round(($i + $PARALLEL) / $actresses.Count * 100, 1)
-            if ($r.status -eq "ok") {
-                Write-Host "[$($i + $PARALLEL)/$($actresses.Count) $pct%] $($r.name): updated" -ForegroundColor Green
-                $total++
-            } elseif ($r.status -eq "not_found") {
-                Write-Host "[$($i + $PARALLEL)/$($actresses.Count) $pct%] $($r.name): not found in DMM" -ForegroundColor Yellow
-            } else {
-                Write-Host "[$($i + $PARALLEL)/$($actresses.Count) $pct%] $($r.name): error - $($r.msg)" -ForegroundColor Red
-                $errors++
-            }
-            Add-Content -Path $progressFile -Value $r.id
+        if (-not $data -or $data.Count -eq 0) {
+            Write-Host "[$i/$($actresses.Count) $pct%] $($actress.name): not found" -ForegroundColor Yellow
+            Add-Content -Path $progressFile -Value $actress.id.ToString()
+            continue
         }
+
+        $a = $data[0]
+
+        # Supabaseに更新
+        $updateBody = @{
+            bust     = if ($a.bust) { [int]$a.bust } else { $null }
+            waist    = if ($a.waist) { [int]$a.waist } else { $null }
+            hip      = if ($a.hip) { [int]$a.hip } else { $null }
+            height   = if ($a.height) { [int]$a.height } else { $null }
+            cup      = if ($a.cup) { $a.cup } else { $null }
+            birthday = if ($a.birthday) { $a.birthday } else { $null }
+        } | ConvertTo-Json -Compress
+
+        Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/actresses?id=eq.$($actress.id)" `
+            -Method Patch -Headers $supabaseHeaders -Body $updateBody -UseBasicParsing | Out-Null
+
+        Write-Host "[$i/$($actresses.Count) $pct%] $($actress.name): updated" -ForegroundColor Green
+        $total++
+
+    } catch {
+        Write-Host "[$i/$($actresses.Count) $pct%] $($actress.name): error - $($_.Exception.Message)" -ForegroundColor Red
+        $errors++
     }
 
-    Start-Sleep -Milliseconds 200
+    Add-Content -Path $progressFile -Value $actress.id.ToString()
+    Start-Sleep -Milliseconds 100
 }
 
 Write-Host "Done! Updated: $total, Errors: $errors" -ForegroundColor Cyan
 
-# 全完了時はログ削除
-if (Test-Path $progressFile) { Remove-Item $progressFile }
-Write-Host "Progress log cleared." -ForegroundColor Gray
+if ($errors -eq 0 -and (Test-Path $progressFile)) {
+    Remove-Item $progressFile
+    Write-Host "Progress log cleared." -ForegroundColor Gray
+}
