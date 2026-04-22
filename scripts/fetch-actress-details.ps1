@@ -36,9 +36,12 @@ $allActresses = @()
 while ($true) {
     $from = $page * $pageSize
     $to = $from + $pageSize - 1
-    $url = "$SUPABASE_URL/rest/v1/actresses?select=id,name&bust=is.null&order=id.asc&offset=$from&limit=$pageSize"
+    $headers2 = $supabaseHeaders.Clone()
+    $headers2["Range"] = "$from-$to"
+    $headers2["Range-Unit"] = "items"
+    $url = "$SUPABASE_URL/rest/v1/actresses?select=id,name&bust=is.null&order=id.asc"
     try {
-        $res = Invoke-WebRequest -Uri $url -Headers $supabaseHeaders -UseBasicParsing
+        $res = Invoke-WebRequest -Uri $url -Headers $headers2 -UseBasicParsing
         $batch = $res.Content | ConvertFrom-Json
         if ($batch.Count -eq 0) { break }
         $allActresses += $batch
