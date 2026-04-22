@@ -21,9 +21,12 @@ $PARALLEL = 10
 $progressFile = "$PSScriptRoot\fetch-actress-details-progress.txt"
 
 # 進捗ログ読み込み（再開用）
-$completedIds = @{}
+$completedIds = [hashtable]@{}
 if (Test-Path $progressFile) {
-    Get-Content $progressFile | ForEach-Object { $completedIds[$_] = $true }
+    $lines = Get-Content $progressFile
+    if ($lines) {
+        @($lines) | ForEach-Object { $completedIds[$_] = $true }
+    }
     Write-Host "Resume mode: $($completedIds.Count) actresses already completed, skipping." -ForegroundColor Yellow
 }
 
