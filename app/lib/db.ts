@@ -91,7 +91,7 @@ export async function getWorksByGenreId(
   return { works: (data ?? []).map(formatWork), total: count ?? 0 }
 }
 
-// 女優IDリスト × ジャンルIDリストでAND検索
+// 女優IDリスト × ジャンルIDリストでAND検索（RPC版）
 export async function getWorksByActressIdsAndGenreIds(
   actressIds: string[],
   genreIds: string[],
@@ -99,50 +99,31 @@ export async function getWorksByActressIdsAndGenreIds(
   limit = 20,
   offset = 0
 ): Promise<{ works: WorkFromDB[]; total: number }> {
-  // 対象女優の作品IDを取得
-  const { data: actressWorkIds } = await supabase
-    .from('work_actresses')
-    .select('work_id')
-    .in('actress_id', actressIds)
+  const { data, error } = await supabase.rpc('get_works_by_actresses_and_genres', {
+    p_actress_ids: actressIds,
+    p_genre_ids: genreIds,
+    p_sort: sort,
+    p_limit: limit,
+    p_offset: offset,
+  })
 
-  if (!actressWorkIds || actressWorkIds.length === 0) return { works: [], total: 0 }
+  if (error || !data || data.length === 0) return { works: [], total: 0 }
 
-  const actressWorkIdSet = actressWorkIds.map(w => w.work_id)
+  const total = Number(data[0].total_count)
 
-  // ジャンルAND絞り込み：各ジャンルに該当する作品IDを取得して積集合
-  let candidateIds = actressWorkIdSet
-  for (const genreId of genreIds) {
-    const { data: genreWorkIds } = await supabase
-      .from('work_genres')
-      .select('work_id')
-      .eq('genre_id', genreId)
-      .in('work_id', candidateIds)
-
-    candidateIds = (genreWorkIds ?? []).map(w => w.work_id)
-    if (candidateIds.length === 0) return { works: [], total: 0 }
-  }
-
-  const total = candidateIds.length
-
-  // ページング分だけworksを取得
-  let query = supabase
+  // RPCの結果からidリストを取得して、関連データ込みで再取得
+  const ids = data.map((r: any) => r.id)
+  const { data: works } = await supabase
     .from('works')
     .select(`
       id, title, affiliate_url, image_large, image_small, volume, date, price,
       work_actresses(actresses(id, name, image_url)),
       work_genres(genres(id, name))
     `)
-    .in('id', candidateIds)
-    .range(offset, offset + limit - 1)
+    .in('id', ids)
+    .order(sort === 'date' ? 'date' : 'id', { ascending: false })
 
-  if (sort === 'date') {
-    query = query.order('date', { ascending: false })
-  } else {
-    query = query.order('id', { ascending: false })
-  }
-
-  const { data } = await query
-  return { works: (data ?? []).map(formatWork), total }
+  return { works: (works ?? []).map(formatWork), total }
 }
 
 // 人気作品を取得
