@@ -27,27 +27,24 @@ if (Test-Path $progressFile) {
     Write-Host "Resume mode: $($completedIds.Count) actresses already completed, skipping." -ForegroundColor Yellow
 }
 
-# 未取得の女優一覧をSupabaseから取得（bust/height/cupがnullの女優）
+# 未取得の女優一覧をSupabaseから取得（bustがnullの女優）
 Write-Host "Fetching actresses without detail data..." -ForegroundColor Cyan
-$page = 0
 $pageSize = 1000
 $allActresses = @()
 
+$offset = 0
 while ($true) {
-    $from = $page * $pageSize
-    $to = $from + $pageSize - 1
-    $headers2 = $supabaseHeaders.Clone()
-    $headers2["Range"] = "$from-$to"
-    $headers2["Range-Unit"] = "items"
-    $url = "$SUPABASE_URL/rest/v1/actresses?select=id,name&bust=is.null&order=id.asc"
+    # RPC経由でページング取得
+    $body = "{""p_limit"":$pageSize,""p_offset"":$offset}" 
     try {
-        $res = Invoke-WebRequest -Uri $url -Headers $headers2 -UseBasicParsing
+        $res = Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/rpc/get_actresses_without_details" `
+            -Method Post -Headers $supabaseHeaders -Body $body -UseBasicParsing
         $batch = $res.Content | ConvertFrom-Json
         if ($batch.Count -eq 0) { break }
         $allActresses += $batch
         Write-Host "  Fetched $($allActresses.Count) actresses so far..." -ForegroundColor Gray
         if ($batch.Count -lt $pageSize) { break }
-        $page++
+        $offset += $pageSize
     } catch {
         Write-Host "Error fetching actress list: $_" -ForegroundColor Red
         break
