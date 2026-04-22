@@ -1,5 +1,5 @@
 # ID範囲（並列実行用）
-# 例: .etch-actress-details.ps1 -IdFrom "1000000" -IdTo "1040000"
+# 例: .etch-actress-details.ps1 -IdFrom "1000000" -IdTo "1040000"
 param(
     [string]$IdFrom = "",
     [string]$IdTo = ""
