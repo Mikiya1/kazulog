@@ -33,7 +33,7 @@ if (Test-Path $progressFile) {
 # 未取得の女優一覧をSupabaseから取得（bustがnullの女優）
 Write-Host "Fetching actresses without detail data..." -ForegroundColor Cyan
 $pageSize = 1000
-$allActresses = @()
+$allActresses = [System.Collections.ArrayList]@()
 
 $offset = 0
 while ($true) {
@@ -42,10 +42,9 @@ while ($true) {
     try {
         $res = Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/rpc/get_actresses_without_details" `
             -Method Post -Headers $supabaseHeaders -Body $body -UseBasicParsing
-        $batch = @($res.Content | ConvertFrom-Json)
-        if ($batch.Count -eq 0) { break }
-        $allActresses = [System.Collections.ArrayList]$allActresses
-        $allActresses.AddRange($batch) | Out-Null
+        $batch = $res.Content | ConvertFrom-Json
+        if (-not $batch -or $batch.Count -eq 0) { break }
+        foreach ($item in $batch) { $allActresses.Add($item) | Out-Null }
         Write-Host "  Fetched $($allActresses.Count) actresses so far..." -ForegroundColor Gray
         if ($batch.Count -lt $pageSize) { break }
         $offset += $pageSize
