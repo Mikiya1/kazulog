@@ -90,7 +90,7 @@ export default function ActressesPage() {
 
     // 50音タブはSupabaseから
     const { actresses: data, total } = await getActressesByInitial(selectedKana, HITS, (page - 1) * HITS)
-    setActresses(data.filter((a: any) => a.image_url).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: a.tags ?? [], debutYear: a.debut_year ?? null })))
+    setActresses((data ?? []).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: a.tags ?? [], debutYear: a.debut_year ?? null })))
     setTotalCount(total)
     setLoading(false)
   }, [tab, selectedKana, keyword, page])

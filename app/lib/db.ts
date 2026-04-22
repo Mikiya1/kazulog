@@ -181,6 +181,7 @@ export async function getActressesByInitial(
     .select('id, name, ruby, image_url, tags, debut_year', { count: 'exact' })
     .gte('ruby', range[0])
     .lte('ruby', range[1] + 'ん')
+    .not('image_url', 'is', null)
     .order('ruby', { ascending: true })
     .range(offset, offset + limit - 1)
 
