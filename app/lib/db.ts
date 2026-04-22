@@ -142,10 +142,10 @@ export async function getPopularWorks(limit = 20, offset = 0): Promise<WorkFromD
 }
 
 // 人気女優を取得
-export async function getPopularActresses(limit = 30): Promise<{ id: string; name: string; image_url: string | null }[]> {
+export async function getPopularActresses(limit = 30): Promise<{ id: string; name: string; image_url: string | null; tags: string[] | null; debut_year: number | null }[]> {
   const { data } = await supabase
     .from('actresses')
-    .select('id, name, image_url')
+    .select('id, name, image_url, tags, debut_year')
     .not('image_url', 'is', null)
     .not('popular_rank', 'is', null)
     .order('popular_rank', { ascending: true })
@@ -159,7 +159,7 @@ export async function getActressesByInitial(
   initial: string,
   limit = 100,
   offset = 0
-): Promise<{ actresses: { id: string; name: string; ruby: string | null; image_url: string | null }[]; total: number }> {
+): Promise<{ actresses: { id: string; name: string; ruby: string | null; image_url: string | null; tags: string[] | null; debut_year: number | null }[]; total: number }> {
   const rubyMap: Record<string, [string, string]> = {
     'あ': ['あ', 'お'],
     'か': ['か', 'こ'],
@@ -178,7 +178,7 @@ export async function getActressesByInitial(
 
   const { data, count } = await supabase
     .from('actresses')
-    .select('id, name, ruby, image_url', { count: 'exact' })
+    .select('id, name, ruby, image_url, tags, debut_year', { count: 'exact' })
     .gte('ruby', range[0])
     .lte('ruby', range[1] + 'ん')
     .order('ruby', { ascending: true })

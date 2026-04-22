@@ -12,6 +12,7 @@ type Actress = {
   name: string
   imageUrl: string
   tags: string[]
+  debutYear: number | null
 }
 
 const AIUEO_ROWS = [
@@ -67,12 +68,12 @@ export default function ActressesPage() {
       // キーワード検索はSupabaseから
       const { data, count } = await supabase
         .from('actresses')
-        .select('id, name, ruby, image_url', { count: 'exact' })
+        .select('id, name, ruby, image_url, tags, debut_year', { count: 'exact' })
         .ilike('name', `%${keyword}%`)
         .not('image_url', 'is', null)
         .order('ruby', { ascending: true })
         .range((page - 1) * HITS, page * HITS - 1)
-      setActresses((data ?? []).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: [] })))
+      setActresses((data ?? []).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: a.tags ?? [], debutYear: a.debut_year ?? null })))
       setTotalCount(count ?? 0)
       setLoading(false)
       return
@@ -81,7 +82,7 @@ export default function ActressesPage() {
     if (tab === 'rank') {
       // 人気タブはSupabaseから
       const data = await getPopularActresses(100)
-      setActresses(data.map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: [] })))
+      setActresses(data.map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: a.tags ?? [], debutYear: a.debut_year ?? null })))
       setTotalCount(0)
       setLoading(false)
       return
@@ -89,7 +90,7 @@ export default function ActressesPage() {
 
     // 50音タブはSupabaseから
     const { actresses: data, total } = await getActressesByInitial(selectedKana, HITS, (page - 1) * HITS)
-    setActresses(data.filter((a: any) => a.image_url).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: [] })))
+    setActresses(data.filter((a: any) => a.image_url).map((a: any) => ({ id: String(a.id), name: a.name, imageUrl: a.image_url ?? '', tags: a.tags ?? [], debutYear: a.debut_year ?? null })))
     setTotalCount(total)
     setLoading(false)
   }, [tab, selectedKana, keyword, page])
@@ -281,33 +282,58 @@ export default function ActressesPage() {
               見つかりませんでした
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
               {actresses.map(actress => (
-                <div key={actress.id} style={{ textAlign: 'center' }}>
-                  <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 6px' }}>
-                    <div
-                      onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.imageUrl)}`)}
-                      style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 0 0 2px #FD297B44' }}
-                    >
-                      <Image src={actress.imageUrl} alt={actress.name} width={80} height={80} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                <div key={actress.id} style={{
+                  background: 'var(--card)', borderRadius: '16px',
+                  padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1.5px solid var(--border)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <div
+                        onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.imageUrl)}`)}
+                        style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 0 0 2px #FD297B44' }}
+                      >
+                        <Image src={actress.imageUrl} alt={actress.name} width={56} height={56} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                      </div>
+                      <button
+                        onClick={() => toggleFavorite(actress)}
+                        style={{
+                          position: 'absolute', bottom: '-2px', right: '-2px',
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          background: '#fff', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '11px', cursor: 'pointer',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                        }}
+                      >
+                        {favoriteIds.includes(actress.id) ? '💖' : '🤍'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => toggleFavorite(actress)}
-                      style={{
-                        position: 'absolute', bottom: '-2px', right: '-2px',
-                        width: '24px', height: '24px', borderRadius: '50%',
-                        background: '#fff', border: 'none',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '13px', cursor: 'pointer',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                      }}
-                    >
-                      {favoriteIds.includes(actress.id) ? '💖' : '🤍'}
-                    </button>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: '700', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {actress.name}
+                      </div>
+                      {actress.debutYear && (
+                        <div style={{ fontSize: '10px', color: 'var(--subtext)', marginTop: '2px' }}>
+                          🎬 {new Date().getFullYear() - actress.debutYear}年目
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text)', fontWeight: '600', lineHeight: 1.3 }}>
-                    {actress.name}
-                  </div>
+                  {actress.tags.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {actress.tags.slice(0, 3).map(tag => (
+                        <span key={tag} style={{
+                          fontSize: '10px', padding: '2px 8px', borderRadius: '20px',
+                          background: '#FD297B18', color: '#FD297B', fontWeight: '600',
+                        }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
