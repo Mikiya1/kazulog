@@ -86,6 +86,7 @@ foreach ($actress in $actresses) {
         if ($a.height)   { $updateHash["height"]   = [int]$a.height }
         if ($a.cup)      { $updateHash["cup"]      = [string]$a.cup }
         if ($a.birthday) { $updateHash["birthday"] = [string]$a.birthday }
+        if ($a.imageURL -and $a.imageURL.large) { $updateHash["image_url"] = [string]$a.imageURL.large }
         if ($updateHash.Count -eq 0) {
             Write-Host "[$i/$($actresses.Count) $pct%] $($actress.name): no data" -ForegroundColor Gray
             Add-Content -Path $progressFile -Value $actress.id.ToString()
