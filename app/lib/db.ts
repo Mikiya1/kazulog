@@ -160,27 +160,28 @@ export async function getActressesByInitial(
   limit = 100,
   offset = 0
 ): Promise<{ actresses: { id: string; name: string; ruby: string | null; image_url: string | null; tags: string[] | null; debut_year: number | null }[]; total: number }> {
-  const rubyMap: Record<string, [string, string]> = {
-    'あ': ['あ', 'お'],
-    'か': ['か', 'こ'],
-    'さ': ['さ', 'そ'],
-    'た': ['た', 'と'],
-    'な': ['な', 'の'],
-    'は': ['は', 'ほ'],
-    'ま': ['ま', 'も'],
-    'や': ['や', 'よ'],
-    'ら': ['ら', 'ろ'],
-    'わ': ['わ', 'ん'],
+  // 各かな文字の範囲（その文字で始まるrubyを取得）
+  const kanaRangeMap: Record<string, [string, string]> = {
+    'あ': ['あ', 'あん'], 'い': ['い', 'いん'], 'う': ['う', 'うん'], 'え': ['え', 'えん'], 'お': ['お', 'おん'],
+    'か': ['か', 'かん'], 'き': ['き', 'きん'], 'く': ['く', 'くん'], 'け': ['け', 'けん'], 'こ': ['こ', 'こん'],
+    'さ': ['さ', 'さん'], 'し': ['し', 'しん'], 'す': ['す', 'すん'], 'せ': ['せ', 'せん'], 'そ': ['そ', 'そん'],
+    'た': ['た', 'たん'], 'ち': ['ち', 'ちん'], 'つ': ['つ', 'つん'], 'て': ['て', 'てん'], 'と': ['と', 'とん'],
+    'な': ['な', 'なん'], 'に': ['に', 'にん'], 'ぬ': ['ぬ', 'ぬん'], 'ね': ['ね', 'ねん'], 'の': ['の', 'のん'],
+    'は': ['は', 'はん'], 'ひ': ['ひ', 'ひん'], 'ふ': ['ふ', 'ふん'], 'へ': ['へ', 'へん'], 'ほ': ['ほ', 'ほん'],
+    'ま': ['ま', 'まん'], 'み': ['み', 'みん'], 'む': ['む', 'むん'], 'め': ['め', 'めん'], 'も': ['も', 'もん'],
+    'や': ['や', 'やん'], 'ゆ': ['ゆ', 'ゆん'], 'よ': ['よ', 'よん'],
+    'ら': ['ら', 'らん'], 'り': ['り', 'りん'], 'る': ['る', 'るん'], 'れ': ['れ', 'れん'], 'ろ': ['ろ', 'ろん'],
+    'わ': ['わ', 'わん'], 'を': ['を', 'をん'], 'ん': ['ん', 'んん'],
   }
 
-  const range = rubyMap[initial]
+  const range = kanaRangeMap[initial]
   if (!range) return { actresses: [], total: 0 }
 
   const { data, count } = await supabase
     .from('actresses')
     .select('id, name, ruby, image_url, tags, debut_year', { count: 'exact' })
     .gte('ruby', range[0])
-    .lte('ruby', range[1] + 'ん')
+    .lte('ruby', range[1])
     .not('image_url', 'is', null)
     .order('ruby', { ascending: true })
     .range(offset, offset + limit - 1)
