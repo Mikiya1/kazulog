@@ -65,7 +65,8 @@ foreach ($actress in $actresses) {
 
     try {
         # DMM APIで女優詳細取得
-        $dmmUrl = "https://api.dmm.com/affiliate/v3/ActressSearch?api_id=$DMM_API_ID&affiliate_id=$DMM_AFFILIATE_ID&output=json&actress_id=$($actress.id)"
+        $actressId = [string]$actress.id
+        $dmmUrl = "https://api.dmm.com/affiliate/v3/ActressSearch?api_id=" + $DMM_API_ID + "&affiliate_id=" + $DMM_AFFILIATE_ID + "&output=json&actress_id=" + $actressId
         $dmmRes = Invoke-WebRequest -Uri $dmmUrl -UseBasicParsing -Headers @{"User-Agent" = "Mozilla/5.0"}
         $data = ($dmmRes.Content | ConvertFrom-Json).result.actress
 
@@ -87,7 +88,8 @@ foreach ($actress in $actresses) {
             birthday = if ($a.birthday) { $a.birthday } else { $null }
         } | ConvertTo-Json -Compress
 
-        Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/actresses?id=eq.$($actress.id)" `
+        $patchUrl = $SUPABASE_URL + "/rest/v1/actresses?id=eq." + $actressId
+        Invoke-WebRequest -Uri $patchUrl `
             -Method Patch -Headers $supabaseHeaders -Body $updateBody -UseBasicParsing | Out-Null
 
         Write-Host "[$i/$($actresses.Count) $pct%] $($actress.name): updated" -ForegroundColor Green
