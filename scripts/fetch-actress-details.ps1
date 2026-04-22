@@ -1,15 +1,15 @@
-# 設定
-$DMM_API_ID = "TNgEcHuzc13U3zf9sDCR"
-$DMM_AFFILIATE_ID = "mikiyabskb-990"
-$SUPABASE_URL = "https://myqcwdfcjqgexpbkomst.supabase.co"
-$SUPABASE_KEY = $env:SUPABASE_SERVICE_ROLE_KEY
-
 # ID範囲（並列実行用）
 # 例: .etch-actress-details.ps1 -IdFrom "1000000" -IdTo "1040000"
 param(
     [string]$IdFrom = "",
     [string]$IdTo = ""
 )
+
+# 設定
+$DMM_API_ID = "TNgEcHuzc13U3zf9sDCR"
+$DMM_AFFILIATE_ID = "mikiyabskb-990"
+$SUPABASE_URL = "https://myqcwdfcjqgexpbkomst.supabase.co"
+$SUPABASE_KEY = $env:SUPABASE_SERVICE_ROLE_KEY
 
 if (-not $SUPABASE_KEY) {
     Write-Host "ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable not set" -ForegroundColor Red
