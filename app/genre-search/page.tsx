@@ -694,7 +694,7 @@ export default function GenreSearchPage() {
           <>
             <div ref={resultsRef} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)' }}>
-                検索結果 {works.length}件　{works.length > 0 && <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--subtext)' }}>（{currentPage}/{totalPages}ページ）</span>}
+                検索結果 {genreTotal > 0 ? genreTotal : works.length}件　{works.length > 0 && <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--subtext)' }}>（{currentPage}/{totalPages}ページ）</span>}
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
