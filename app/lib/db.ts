@@ -91,6 +91,60 @@ export async function getWorksByGenreId(
   return { works: (data ?? []).map(formatWork), total: count ?? 0 }
 }
 
+// 女優IDリスト × ジャンルIDリストでAND検索
+export async function getWorksByActressIdsAndGenreIds(
+  actressIds: string[],
+  genreIds: string[],
+  sort: 'date' | 'rank' = 'date',
+  limit = 20,
+  offset = 0
+): Promise<{ works: WorkFromDB[]; total: number }> {
+  // 対象女優の作品IDを取得
+  const { data: actressWorkIds } = await supabase
+    .from('work_actresses')
+    .select('work_id')
+    .in('actress_id', actressIds)
+
+  if (!actressWorkIds || actressWorkIds.length === 0) return { works: [], total: 0 }
+
+  const actressWorkIdSet = actressWorkIds.map(w => w.work_id)
+
+  // ジャンルAND絞り込み：各ジャンルに該当する作品IDを取得して積集合
+  let candidateIds = actressWorkIdSet
+  for (const genreId of genreIds) {
+    const { data: genreWorkIds } = await supabase
+      .from('work_genres')
+      .select('work_id')
+      .eq('genre_id', genreId)
+      .in('work_id', candidateIds)
+
+    candidateIds = (genreWorkIds ?? []).map(w => w.work_id)
+    if (candidateIds.length === 0) return { works: [], total: 0 }
+  }
+
+  const total = candidateIds.length
+
+  // ページング分だけworksを取得
+  let query = supabase
+    .from('works')
+    .select(`
+      id, title, affiliate_url, image_large, image_small, volume, date, price,
+      work_actresses(actresses(id, name, image_url)),
+      work_genres(genres(id, name))
+    `)
+    .in('id', candidateIds)
+    .range(offset, offset + limit - 1)
+
+  if (sort === 'date') {
+    query = query.order('date', { ascending: false })
+  } else {
+    query = query.order('id', { ascending: false })
+  }
+
+  const { data } = await query
+  return { works: (data ?? []).map(formatWork), total }
+}
+
 // 人気作品を取得
 export async function getPopularWorks(limit = 20, offset = 0): Promise<WorkFromDB[]> {
   const { data } = await supabase

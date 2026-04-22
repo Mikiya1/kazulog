@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
-import { getWorksByGenreId, getWorksByActressId } from '../lib/db'
+import { getWorksByGenreId, getWorksByActressIdsAndGenreIds } from '../lib/db'
 
 type Favorite = {
   actress_id: string
@@ -441,19 +441,15 @@ export default function GenreSearchPage() {
       return
     }
 
-    // 女優×ジャンルをSupabaseで検索
-    const results = await Promise.all(
-      selectedFavorites.map(f => getWorksByActressId(f.actress_id, sortOrder, 100, 0))
+    // 女優×ジャンルをSupabaseでAND検索
+    const actressIds = selectedFavorites.map(f => f.actress_id)
+    const { works: filtered, total } = await getWorksByActressIdsAndGenreIds(
+      actressIds,
+      selectedGenres,
+      sortOrder,
+      PER_PAGE,
+      (currentPage - 1) * PER_PAGE
     )
-    const merged = results.flat()
-    const uniqueMap = new Map(merged.map(w => [w.id, w]))
-    const unique = Array.from(uniqueMap.values())
-
-    // ジャンルフィルタ
-    const filtered = unique.filter(w => {
-      const workGenreIds = w.genres.map(g => g.id)
-      return selectedGenres.every(gId => workGenreIds.includes(gId))
-    })
 
     const convertedWorks = filtered.map(w => ({
       content_id: w.id,
@@ -470,6 +466,7 @@ export default function GenreSearchPage() {
 
     setPartialResults([])
     setWorks(convertedWorks)
+    setGenreTotal(total)
     setLoading(false)
   }
 
@@ -481,10 +478,11 @@ export default function GenreSearchPage() {
         }
         return 0
       })
-  const totalPages = isGenreOnlySearch
+  const isActressGenreSearch = selectedActresses.length > 0 && selectedGenres.length > 0
+  const totalPages = (isGenreOnlySearch || isActressGenreSearch)
     ? Math.ceil(genreTotal / PER_PAGE)
     : Math.ceil(sortedWorks.length / PER_PAGE)
-  const pagedWorks = isGenreOnlySearch
+  const pagedWorks = (isGenreOnlySearch || isActressGenreSearch)
     ? sortedWorks // 既に今のページ分だけ取得済み
     : sortedWorks.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
 
@@ -805,7 +803,7 @@ export default function GenreSearchPage() {
                 {totalPages > 1 && (
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
                     <button
-                      onClick={() => { const p = Math.max(1, currentPage - 1); setCurrentPage(p); fetchGenrePage(p) }}
+                      onClick={() => { const p = Math.max(1, currentPage - 1); setCurrentPage(p); isGenreOnlySearch ? fetchGenrePage(p) : search() }}
                       disabled={currentPage === 1}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >←</button>
@@ -819,13 +817,13 @@ export default function GenreSearchPage() {
                       .map((p, i) => (
                         <button
                           key={i}
-                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); fetchGenrePage(p) } }}
+                          onClick={() => { if (typeof p === 'number') { setCurrentPage(p); isGenreOnlySearch ? fetchGenrePage(p) : search() } }}
                           style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: p === '...' ? 'default' : 'pointer', background: p === currentPage ? '#FD297B' : 'var(--card)', color: p === currentPage ? '#fff' : 'var(--text)', border: p === currentPage ? 'none' : '1.5px solid var(--border)' }}
                         >{p}</button>
                       ))
                     }
                     <button
-                      onClick={() => { const p = Math.min(totalPages, currentPage + 1); setCurrentPage(p); fetchGenrePage(p) }}
+                      onClick={() => { const p = Math.min(totalPages, currentPage + 1); setCurrentPage(p); isGenreOnlySearch ? fetchGenrePage(p) : search() }}
                       disabled={currentPage === totalPages}
                       style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', background: 'var(--card)', color: currentPage === totalPages ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}
                     >→</button>
@@ -839,7 +837,7 @@ export default function GenreSearchPage() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             const v = parseInt((e.target as HTMLInputElement).value)
-                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); fetchGenrePage(v) }
+                            if (v >= 1 && v <= totalPages) { setCurrentPage(v); isGenreOnlySearch ? fetchGenrePage(v) : search() }
                           }
                         }}
                         style={{ width: '32px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '700', color: 'var(--text)', textAlign: 'center', outline: 'none', padding: 0 }}
