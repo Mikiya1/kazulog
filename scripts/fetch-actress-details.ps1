@@ -52,6 +52,7 @@ while ($true) {
 }
 
 # 処理済みをスキップ
+if ($null -eq $completedIds) { $completedIds = @{} }
 $actresses = $allActresses | Where-Object { -not $completedIds[$_.id.ToString()] }
 Write-Host "Total: $($actresses.Count) actresses to process, parallel: $PARALLEL" -ForegroundColor Cyan
 
