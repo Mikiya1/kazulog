@@ -4,6 +4,13 @@ $DMM_AFFILIATE_ID = "mikiyabskb-990"
 $SUPABASE_URL = "https://myqcwdfcjqgexpbkomst.supabase.co"
 $SUPABASE_KEY = $env:SUPABASE_SERVICE_ROLE_KEY
 
+# ID範囲（並列実行用）
+# 例: .etch-actress-details.ps1 -IdFrom "1000000" -IdTo "1040000"
+param(
+    [string]$IdFrom = "",
+    [string]$IdTo = ""
+)
+
 if (-not $SUPABASE_KEY) {
     Write-Host "ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable not set" -ForegroundColor Red
     exit 1
@@ -16,7 +23,8 @@ $supabaseHeaders = @{
     "Prefer"        = "resolution=merge-duplicates"
 }
 
-$progressFile = "$PSScriptRoot\fetch-actress-details-progress.txt"
+$suffix = if ($IdFrom -ne "") { "-$IdFrom" } else { "" }
+$progressFile = "$PSScriptRoot\fetch-actress-details-progress$suffix.txt"
 
 # 進捗ログ読み込み（再開用）
 $completedIds = [hashtable]@{}
@@ -35,7 +43,7 @@ $allActresses = [System.Collections.ArrayList]@()
 $offset = 0
 
 while ($true) {
-    $body = "{`"p_limit`":$pageSize,`"p_offset`":$offset}"
+    $body = "{`"p_limit`":$pageSize,`"p_offset`":$offset,`"p_id_from`":`"$IdFrom`",`"p_id_to`":`"$IdTo`"}"
     try {
         $res = Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/rpc/get_actresses_without_details" `
             -Method Post -Headers $supabaseHeaders -Body $body -UseBasicParsing
