@@ -39,9 +39,10 @@ while ($true) {
     try {
         $res = Invoke-WebRequest -Uri "$SUPABASE_URL/rest/v1/rpc/get_actresses_without_details" `
             -Method Post -Headers $supabaseHeaders -Body $body -UseBasicParsing
-        $batch = $res.Content | ConvertFrom-Json
+        $batch = @($res.Content | ConvertFrom-Json)
         if ($batch.Count -eq 0) { break }
-        $allActresses += $batch
+        $allActresses = [System.Collections.ArrayList]$allActresses
+        $allActresses.AddRange($batch) | Out-Null
         Write-Host "  Fetched $($allActresses.Count) actresses so far..." -ForegroundColor Gray
         if ($batch.Count -lt $pageSize) { break }
         $offset += $pageSize
@@ -50,6 +51,7 @@ while ($true) {
         break
     }
 }
+$allActresses = @($allActresses)
 
 # 処理済みをスキップ
 if ($null -eq $completedIds) { $completedIds = @{} }
