@@ -282,7 +282,7 @@ export default function ActressesPage() {
               見つかりませんでした
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px', alignItems: 'start' }}>
               {actresses.map(actress => (
                 <div key={actress.id} style={{
                   background: 'var(--card)', borderRadius: '16px',
