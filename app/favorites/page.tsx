@@ -199,13 +199,14 @@ export default function FavoritesPage() {
   }
 
   const tabStyle = (t: Tab) => ({
-    flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
-    fontSize: '13px', fontWeight: '700',
+    flex: 1, padding: '7px 4px', border: 'none', cursor: 'pointer',
+    fontSize: '11px', fontWeight: '700',
     background: tab === t ? 'var(--gradient)' : 'var(--card)',
     color: tab === t ? '#fff' : 'var(--subtext)',
-    borderRadius: '12px',
+    borderRadius: '10px',
     boxShadow: tab === t ? 'var(--shadow-btn)' : 'none',
     transition: 'all 0.2s',
+    whiteSpace: 'nowrap',
   })
 
   return (
@@ -214,10 +215,10 @@ export default function FavoritesPage() {
       <main style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)', maxWidth: '480px', margin: '0 auto' }}>
 
         {/* タブ */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg)', padding: '16px 20px 12px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg)', padding: '10px 20px 8px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button style={tabStyle('list') as React.CSSProperties} onClick={() => setTab('list')}>
-              💖 お気に入り
+              💖 一覧
             </button>
             <button style={tabStyle('timeline') as React.CSSProperties} onClick={() => setTab('timeline')}>
               📬 最新作
@@ -246,7 +247,7 @@ export default function FavoritesPage() {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                     {favorites.slice((favPage - 1) * FAV_PER_PAGE, favPage * FAV_PER_PAGE).map(fav => (
                       <div key={fav.id} style={{ background: 'var(--card)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
                         <button
@@ -265,7 +266,7 @@ export default function FavoritesPage() {
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
                           <div style={{ height: '110px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
-                              <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
+                              <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
                             )}
