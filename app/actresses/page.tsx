@@ -282,7 +282,7 @@ export default function ActressesPage() {
               見つかりませんでした
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px' }}>
               {actresses.map(actress => (
                 <div key={actress.id} style={{
                   background: 'var(--card)', borderRadius: '16px',
@@ -323,11 +323,12 @@ export default function ActressesPage() {
                     </div>
                   </div>
                   {actress.tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', overflow: 'hidden', maxHeight: '44px' }}>
                       {actress.tags.slice(0, 5).map(tag => (
                         <span key={tag} style={{
-                          fontSize: '10px', padding: '2px 8px', borderRadius: '20px',
+                          fontSize: '10px', padding: '2px 6px', borderRadius: '20px',
                           background: '#FD297B18', color: '#FD297B', fontWeight: '600',
+                          whiteSpace: 'nowrap',
                         }}>
                           {tag}
                         </span>
