@@ -52,7 +52,23 @@ export default function PreferredTagsPage() {
   const syncTags = async () => {
     if (!user) return
     setSyncing(true)
+    // 自動検出タグを一旦削除して再計算（手動タグは残す）
+    await supabase.from('user_preferred_tags')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('is_manual', false)
     await supabase.rpc('sync_preferred_tags', { p_user_id: user.id })
+    // 自動タグを上位5個に制限
+    const { data: autoTags } = await supabase
+      .from('user_preferred_tags')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_manual', false)
+      .order('score', { ascending: false })
+    if (autoTags && autoTags.length > 5) {
+      const toDelete = autoTags.slice(5).map(t => t.id)
+      await supabase.from('user_preferred_tags').delete().in('id', toDelete)
+    }
     await loadTags(user.id)
     setSyncing(false)
   }
