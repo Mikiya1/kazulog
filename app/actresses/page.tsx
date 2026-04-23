@@ -289,31 +289,31 @@ export default function ActressesPage() {
                   padding: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   border: '1.5px solid var(--border)',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <div
-                        onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.imageUrl)}`)}
-                        style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 0 0 2px #FD297B44' }}
-                      >
+                  <div
+                    onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.imageUrl)}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', cursor: 'pointer' }}
+                  >
+                    <div style={{ flexShrink: 0 }}>
+                      <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 0 0 2px #FD297B44' }}>
                         <Image src={actress.imageUrl} alt={actress.name} width={56} height={56} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                       </div>
-                      <button
-                        onClick={() => toggleFavorite(actress)}
-                        style={{
-                          position: 'absolute', bottom: '-2px', right: '-2px',
-                          width: '20px', height: '20px', borderRadius: '50%',
-                          background: '#fff', border: 'none',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '11px', cursor: 'pointer',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                        }}
-                      >
-                        {favoriteIds.includes(actress.id) ? '💖' : '🤍'}
-                      </button>
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: '700', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {actress.name}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: '700', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                          {actress.name}
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(actress) }}
+                          style={{
+                            width: '20px', height: '20px', borderRadius: '50%',
+                            background: 'none', border: 'none', flexShrink: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '13px', cursor: 'pointer',
+                          }}
+                        >
+                          {favoriteIds.includes(actress.id) ? '💖' : '🤍'}
+                        </button>
                       </div>
                       {actress.debutYear && (
                         <div style={{ fontSize: '10px', color: 'var(--subtext)', marginTop: '2px' }}>

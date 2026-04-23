@@ -142,7 +142,7 @@ function RecommendContent() {
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                    <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: '80px', minHeight: '110px', position: 'relative', flexShrink: 0 }}>
                       <Image src={work.image_small || work.image_large || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                     </div>
                     <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
