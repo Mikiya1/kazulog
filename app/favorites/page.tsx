@@ -45,6 +45,8 @@ export default function FavoritesPage() {
   const [tab, setTab] = useState<Tab>('list')
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [removedIds, setRemovedIds] = useState<string[]>([])
+  const [favPage, setFavPage] = useState(1)
+  const FAV_PER_PAGE = 20
   const [pageLoading, setPageLoading] = useState(true)
   const [user, setUser] = useState<{ id: string } | null>(null)
 
@@ -244,9 +246,9 @@ export default function FavoritesPage() {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '32px' }}>
-                    {favorites.map(fav => (
-                      <div key={fav.id} style={{ background: 'var(--card)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    {favorites.slice((favPage - 1) * FAV_PER_PAGE, favPage * FAV_PER_PAGE).map(fav => (
+                      <div key={fav.id} style={{ background: 'var(--card)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
                         <button
                           onClick={() => removeFavorite(fav.actress_id)}
                           style={{
@@ -261,16 +263,16 @@ export default function FavoritesPage() {
                           {removedIds.includes(fav.actress_id) ? '🤍' : '💖'}
                         </button>
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
-                          <div style={{ height: '80px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ height: '140px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
                               <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
                             )}
                           </div>
-                          <div style={{ padding: '6px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
-                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
+                          <div style={{ padding: '10px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
+                            <div style={{ fontSize: '11px', marginTop: '4px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
                               作品を見る →
                             </div>
                           </div>
@@ -278,6 +280,18 @@ export default function FavoritesPage() {
                       </div>
                     ))}
                   </div>
+                  {Math.ceil(favorites.length / FAV_PER_PAGE) > 1 && (
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
+                      <button onClick={() => setFavPage(p => Math.max(1, p - 1))} disabled={favPage === 1}
+                        style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: favPage === 1 ? 'not-allowed' : 'pointer', background: 'var(--card)', color: favPage === 1 ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}>←</button>
+                      {Array.from({ length: Math.ceil(favorites.length / FAV_PER_PAGE) }, (_, i) => i + 1).map(p => (
+                        <button key={p} onClick={() => setFavPage(p)}
+                          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', background: p === favPage ? '#FD297B' : 'var(--card)', color: p === favPage ? '#fff' : 'var(--text)', border: p === favPage ? 'none' : '1.5px solid var(--border)' }}>{p}</button>
+                      ))}
+                      <button onClick={() => setFavPage(p => Math.min(Math.ceil(favorites.length / FAV_PER_PAGE), p + 1))} disabled={favPage === Math.ceil(favorites.length / FAV_PER_PAGE)}
+                        style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: favPage === Math.ceil(favorites.length / FAV_PER_PAGE) ? 'not-allowed' : 'pointer', background: 'var(--card)', color: favPage === Math.ceil(favorites.length / FAV_PER_PAGE) ? 'var(--border)' : 'var(--text)', border: '1.5px solid var(--border)' }}>→</button>
+                    </div>
+                  )}
                   <button onClick={() => router.push('/swipe')} style={{ width: '100%', background: 'var(--card)', color: 'var(--subtext)', border: '1.5px solid var(--border)', borderRadius: '50px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                     診断する 🔥
                   </button>
@@ -292,7 +306,7 @@ export default function FavoritesPage() {
               {timelineLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '6px', opacity: 0.5 }}>
+                    <div key={i} style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '10px', opacity: 0.5 }}>
                       <div style={{ width: '80px', height: '100px', borderRadius: '10px', background: 'var(--border)', flexShrink: 0 }} />
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
                         <div style={{ height: '12px', background: 'var(--border)', borderRadius: '6px', width: '60%' }} />
@@ -313,7 +327,7 @@ export default function FavoritesPage() {
                     <div
                       key={work.content_id}
                       onClick={() => window.open(work.affiliateURL, '_blank')}
-                      style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '6px', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+                      style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '10px', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
                     >
                       <div style={{ flexShrink: 0, width: '80px', height: '100px', borderRadius: '10px', overflow: 'hidden', background: '#f8f0f4', position: 'relative' }}>
                         <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />

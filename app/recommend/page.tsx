@@ -141,7 +141,7 @@ function RecommendContent() {
                       💖 BEST MATCH
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
                     <div style={{ width: '80px', minHeight: '100px', position: 'relative', flexShrink: 0 }}>
                       <Image src={work.image_small || work.image_large || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                     </div>
