@@ -286,8 +286,10 @@ export default function ActressesPage() {
               {actresses.map(actress => (
                 <div key={actress.id} style={{
                   background: 'var(--card)', borderRadius: '16px',
-                  padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  padding: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   border: '1.5px solid var(--border)',
+                  height: '120px', overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>
