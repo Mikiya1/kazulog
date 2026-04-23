@@ -65,8 +65,8 @@ export default function PreferredTagsPage() {
       .eq('user_id', user.id)
       .eq('is_manual', false)
       .order('score', { ascending: false })
-    if (autoTags && autoTags.length > 5) {
-      const toDelete = autoTags.slice(5).map(t => t.id)
+    if (autoTags && autoTags.length > 10) {
+      const toDelete = autoTags.slice(10).map(t => t.id)
       await supabase.from('user_preferred_tags').delete().in('id', toDelete)
     }
     await loadTags(user.id)
