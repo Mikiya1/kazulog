@@ -18,17 +18,30 @@ export async function getWorksByActressId(
   actressId: string,
   sort: 'date' | 'rank' = 'rank',
   limit = 20,
-  offset = 0
+  offset = 0,
+  soloOnly = false
 ): Promise<WorkFromDB[]> {
   // work_actressesから作品IDを取得
-  const { data: workIds } = await supabase
+  let workIdsQuery = supabase
     .from('work_actresses')
     .select('work_id')
     .eq('actress_id', actressId)
 
+  const { data: workIds } = await workIdsQuery
   if (!workIds || workIds.length === 0) return []
 
-  const ids = workIds.map(w => w.work_id)
+  let ids = workIds.map(w => w.work_id)
+
+  // 単体作品フィルタ
+  if (soloOnly) {
+    const { data: soloIds } = await supabase
+      .from('work_genres')
+      .select('work_id')
+      .eq('genre_id', '4025')
+      .in('work_id', ids)
+    ids = (soloIds ?? []).map(w => w.work_id)
+    if (ids.length === 0) return []
+  }
 
   let query = supabase
     .from('works')

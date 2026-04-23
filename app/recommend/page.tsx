@@ -24,7 +24,7 @@ function RecommendContent() {
   )
   const [works, setWorks] = useState<WorkFromDB[]>([])
   const [loading, setLoading] = useState(false)
-  const [sort, setSort] = useState<'rank' | 'date'>('rank')
+  const [sort, setSort] = useState<'rank' | 'date' | 'rank_solo' | 'date_solo'>('rank')
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const HITS = 20
@@ -35,7 +35,9 @@ function RecommendContent() {
     setWorks([])
     setOffset(0)
     setHasMore(true)
-    getWorksByActressId(selectedActress.id, sort, HITS, 0)
+    const soloOnly = sort === 'rank_solo' || sort === 'date_solo'
+    const actualSort = sort === 'rank_solo' ? 'rank' : sort === 'date_solo' ? 'date' : sort
+    getWorksByActressId(selectedActress.id, actualSort, HITS, 0, soloOnly)
       .then(items => {
         setWorks(items)
         setHasMore(items.length === HITS)
@@ -47,7 +49,9 @@ function RecommendContent() {
   const loadMore = () => {
     if (!selectedActress || loading) return
     const nextOffset = offset + HITS
-    getWorksByActressId(selectedActress.id, sort, HITS, nextOffset)
+    const soloOnly = sort === 'rank_solo' || sort === 'date_solo'
+    const actualSort = sort === 'rank_solo' ? 'rank' : sort === 'date_solo' ? 'date' : sort
+    getWorksByActressId(selectedActress.id, actualSort, HITS, nextOffset, soloOnly)
       .then(items => {
         setWorks(prev => [...prev, ...items])
         setOffset(nextOffset)
@@ -101,15 +105,20 @@ function RecommendContent() {
         </div>
 
         {/* ソート切り替え */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-          {(['rank', 'date'] as const).map(s => (
-            <button key={s} onClick={() => setSort(s)} style={{
-              padding: '6px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-              background: sort === s ? '#FD297B' : 'var(--card)',
-              color: sort === s ? '#fff' : 'var(--subtext)',
-              border: sort === s ? 'none' : '1.5px solid var(--border)',
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {([
+            { key: 'rank', label: '人気順' },
+            { key: 'date', label: '最新順' },
+            { key: 'rank_solo', label: '人気順(単体)' },
+            { key: 'date_solo', label: '最新順(単体)' },
+          ] as const).map(({ key, label }) => (
+            <button key={key} onClick={() => setSort(key)} style={{
+              padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+              background: sort === key ? '#FD297B' : 'var(--card)',
+              color: sort === key ? '#fff' : 'var(--subtext)',
+              border: sort === key ? 'none' : '1.5px solid var(--border)',
             }}>
-              {s === 'rank' ? '人気順' : '最新順'}
+              {label}
             </button>
           ))}
         </div>
