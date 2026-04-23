@@ -45,40 +45,25 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
   const loadAll = async (userId: string) => {
     setLoading(true)
 
-    // 好みタグ確認
-    const { data: tags } = await supabase
-      .from('user_preferred_tags')
-      .select('tag_name')
-      .eq('user_id', userId)
-    
-    if (!tags || tags.length === 0) {
+    // 全部並列取得
+    const [tagsRes, favsRes, actressRes, workRes] = await Promise.all([
+      supabase.from('user_preferred_tags').select('tag_name').eq('user_id', userId),
+      supabase.from('favorites').select('actress_id').eq('user_id', userId),
+      supabase.rpc('get_recommended_actresses', { p_user_id: userId, p_limit: 20 }),
+      supabase.rpc('get_recommended_works', { p_user_id: userId, p_limit: 20 }),
+    ])
+
+    const tags = tagsRes.data ?? []
+    if (tags.length === 0) {
       setHasTags(false)
       setLoading(false)
       return
     }
+
     setPreferredTags(tags.map(t => t.tag_name))
-
-    // お気に入り一覧
-    const { data: favs } = await supabase
-      .from('favorites')
-      .select('actress_id')
-      .eq('user_id', userId)
-    setFavoriteIds((favs ?? []).map(f => f.actress_id))
-
-    // おすすめ女優
-    const { data: actressData } = await supabase.rpc('get_recommended_actresses', {
-      p_user_id: userId,
-      p_limit: 20,
-    })
-    setActresses(actressData ?? [])
-
-    // おすすめ作品
-    const { data: workData } = await supabase.rpc('get_recommended_works', {
-      p_user_id: userId,
-      p_limit: 20,
-    })
-    setWorks(workData ?? [])
-
+    setFavoriteIds((favsRes.data ?? []).map(f => f.actress_id))
+    setActresses(actressRes.data ?? [])
+    setWorks(workRes.data ?? [])
     setLoading(false)
   }
 
