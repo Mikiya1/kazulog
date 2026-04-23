@@ -229,6 +229,17 @@ export default function FavoritesPage() {
             <button style={tabStyle('recommended') as React.CSSProperties} onClick={() => setTab('recommended')}>
               ✨ おすすめ
             </button>
+            <button
+              onClick={() => router.push('/favorites/tags')}
+              style={{
+                flex: 1, padding: '7px 4px', border: 'none', cursor: 'pointer',
+                fontSize: '11px', fontWeight: '700',
+                background: 'var(--card)', color: 'var(--subtext)',
+                borderRadius: '10px', whiteSpace: 'nowrap',
+              }}
+            >
+              🏷️ 好みタグ
+            </button>
           </div>
         </div>
 
