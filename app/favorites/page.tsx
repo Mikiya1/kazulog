@@ -266,7 +266,7 @@ export default function FavoritesPage() {
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
                           <div style={{ height: '80px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
-                              <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} unoptimized />
+                              <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
                             )}
@@ -379,7 +379,7 @@ export default function FavoritesPage() {
                   >
                     <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 2px #FD297B44' }}>
                       {actress.actress_image ? (
-                        <Image src={actress.actress_image} alt={actress.actress_name} width={44} height={44} style={{ objectFit: 'cover', objectPosition: 'center top' }} unoptimized />
+                        <Image src={actress.actress_image} alt={actress.actress_name} width={44} height={44} style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
                       ) : (
                         <div style={{ width: '44px', height: '44px', background: '#f8f0f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>👩</div>
                       )}
