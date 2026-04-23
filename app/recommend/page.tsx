@@ -142,12 +142,12 @@ function RecommendContent() {
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                    <div style={{ width: '100px', minHeight: '130px', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: '80px', minHeight: '100px', position: 'relative', flexShrink: 0 }}>
                       <Image src={work.image_small || work.image_large || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                     </div>
-                    <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
+                    <div style={{ flex: 1, padding: '10px 12px', minWidth: 0 }}>
                       <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
-                        {work.title.length > 40 ? work.title.slice(0, 40) + '...' : work.title}
+                        {work.title.length > 30 ? work.title.slice(0, 30) + '...' : work.title}
                       </div>
                       {work.price && (
                         <div style={{ fontSize: '13px', marginTop: '6px', fontWeight: '700', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
