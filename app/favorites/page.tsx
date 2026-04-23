@@ -263,7 +263,7 @@ export default function FavoritesPage() {
                           {removedIds.includes(fav.actress_id) ? '🤍' : '💖'}
                         </button>
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
-                          <div style={{ height: '140px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ height: '110px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
                               <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
                             ) : (
@@ -406,7 +406,7 @@ export default function FavoritesPage() {
                           onClick={() => window.open(work.affiliateURL, '_blank')}
                           style={{ flexShrink: 0, width: '100px', cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', background: 'var(--card)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                         >
-                          <div style={{ width: '100px', height: '140px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ width: '100px', height: '110px', position: 'relative', background: '#f8f0f4' }}>
                             <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                           </div>
                           <div style={{ padding: '6px 8px' }}>

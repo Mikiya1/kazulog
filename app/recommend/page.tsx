@@ -77,8 +77,8 @@ function RecommendContent() {
 
         <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '16px' }}>気になった女優 💖</h2>
 
-        {/* 女優タブ */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        {/* 女優タブ + お気に入りボタン */}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px', alignItems: 'center' }}>
           {likedActresses.map(actress => (
             <button
               key={actress.id}
@@ -95,14 +95,10 @@ function RecommendContent() {
               {actress.name}
             </button>
           ))}
-        </div>
-
-        {/* お気に入りボタン */}
-        {selectedActress && (
-          <div style={{ marginBottom: '16px' }}>
+          {selectedActress && (
             <FavoriteButton actressId={selectedActress.id} actressName={selectedActress.name} actressImage={selectedActress.imageUrl ?? ''} />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* ソート切り替え */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
