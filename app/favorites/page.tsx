@@ -315,7 +315,7 @@ export default function FavoritesPage() {
                       onClick={() => window.open(work.affiliateURL, '_blank')}
                       style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '12px', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
                     >
-                      <div style={{ flexShrink: 0, width: '80px', height: '112px', borderRadius: '10px', overflow: 'hidden', background: '#f8f0f4', position: 'relative' }}>
+                      <div style={{ flexShrink: 0, width: '100px', height: '130px', borderRadius: '10px', overflow: 'hidden', background: '#f8f0f4', position: 'relative' }}>
                         <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>

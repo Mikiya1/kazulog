@@ -284,15 +284,14 @@ export default function ActressesPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'calc(50% - 4px) calc(50% - 4px)', gap: '8px', marginBottom: '24px' }}>
               {actresses.map(actress => (
-                <div key={actress.id} style={{
-                  background: 'var(--card)', borderRadius: '16px',
-                  padding: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1.5px solid var(--border)',
-                }}>
-                  <div
-                    onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.imageUrl)}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', cursor: 'pointer' }}
-                  >
+                <div key={actress.id}
+                  onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.imageUrl)}`)}
+                  style={{
+                    background: 'var(--card)', borderRadius: '16px',
+                    padding: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1.5px solid var(--border)', cursor: 'pointer',
+                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <div style={{ flexShrink: 0 }}>
                       <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 0 0 2px #FD297B44' }}>
                         <Image src={actress.imageUrl} alt={actress.name} width={56} height={56} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
