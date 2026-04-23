@@ -288,8 +288,6 @@ export default function ActressesPage() {
                   background: 'var(--card)', borderRadius: '16px',
                   padding: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   border: '1.5px solid var(--border)',
-                  height: '120px', overflow: 'hidden',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -325,7 +323,7 @@ export default function ActressesPage() {
                     </div>
                   </div>
                   {actress.tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', overflow: 'hidden', maxHeight: '44px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                       {actress.tags.slice(0, 5).map(tag => (
                         <span key={tag} style={{
                           fontSize: '10px', padding: '2px 6px', borderRadius: '20px',
