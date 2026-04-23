@@ -141,12 +141,12 @@ function RecommendContent() {
                       💖 BEST MATCH
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                     <div style={{ width: '80px', minHeight: '100px', position: 'relative', flexShrink: 0 }}>
                       <Image src={work.image_small || work.image_large || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                     </div>
                     <div style={{ flex: 1, padding: '10px 12px', minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: i === 0 ? '18px' : 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: 0 }}>
                         {work.title.length > 30 ? work.title.slice(0, 30) + '...' : work.title}
                       </div>
                       {work.price && (
