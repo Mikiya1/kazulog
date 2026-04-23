@@ -244,33 +244,33 @@ export default function FavoritesPage() {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '32px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '32px' }}>
                     {favorites.map(fav => (
-                      <div key={fav.id} style={{ background: 'var(--card)', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', position: 'relative' }}>
+                      <div key={fav.id} style={{ background: 'var(--card)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
                         <button
                           onClick={() => removeFavorite(fav.actress_id)}
                           style={{
                             position: 'absolute', top: '8px', right: '8px', zIndex: 3,
-                            width: '28px', height: '28px', borderRadius: '50%',
+                            width: '20px', height: '20px', borderRadius: '50%',
                             background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                             opacity: removedIds.includes(fav.actress_id) ? 0.4 : 1,
                           }}
                         >
                           {removedIds.includes(fav.actress_id) ? '🤍' : '💖'}
                         </button>
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
-                          <div style={{ height: '160px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ height: '80px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
                               <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
                             )}
                           </div>
-                          <div style={{ padding: '12px' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text)' }}>{fav.actress_name}</div>
-                            <div style={{ fontSize: '12px', marginTop: '4px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
+                          <div style={{ padding: '6px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
+                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
                               作品を見る →
                             </div>
                           </div>
@@ -292,7 +292,7 @@ export default function FavoritesPage() {
               {timelineLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '12px', opacity: 0.5 }}>
+                    <div key={i} style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '6px', opacity: 0.5 }}>
                       <div style={{ width: '80px', height: '100px', borderRadius: '10px', background: 'var(--border)', flexShrink: 0 }} />
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
                         <div style={{ height: '12px', background: 'var(--border)', borderRadius: '6px', width: '60%' }} />
@@ -313,7 +313,7 @@ export default function FavoritesPage() {
                     <div
                       key={work.content_id}
                       onClick={() => window.open(work.affiliateURL, '_blank')}
-                      style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '12px', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+                      style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '6px', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
                     >
                       <div style={{ flexShrink: 0, width: '80px', height: '100px', borderRadius: '10px', overflow: 'hidden', background: '#f8f0f4', position: 'relative' }}>
                         <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />

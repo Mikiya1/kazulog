@@ -128,7 +128,7 @@ function RecommendContent() {
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--subtext)' }}>作品が見つかりませんでした</div>
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {works.map((work, i) => (
                 <div key={work.id} style={{
                   background: 'var(--card)', borderRadius: '20px', overflow: 'hidden',
@@ -149,11 +149,7 @@ function RecommendContent() {
                       <div style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.4, color: 'var(--text)', marginTop: 0 }}>
                         {work.title.length > 30 ? work.title.slice(0, 30) + '...' : work.title}
                       </div>
-                      {work.price && (
-                        <div style={{ fontSize: '13px', marginTop: '6px', fontWeight: '700', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
-                          {work.price}
-                        </div>
-                      )}
+
                       {work.actresses.length > 0 && (
                         <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           👩 {work.actresses.map(a => a.name).join(' / ')}
