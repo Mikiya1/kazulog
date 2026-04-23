@@ -184,7 +184,7 @@ export default function NewWorksPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {[...Array(6)].map((_, i) => (
               <div key={i} style={{ display: 'flex', gap: '12px', background: 'var(--card)', borderRadius: '16px', padding: '12px', opacity: 0.5 }}>
-                <div style={{ width: '80px', height: '112px', borderRadius: '10px', background: 'var(--border)', flexShrink: 0 }} />
+                <div style={{ width: '80px', height: '100px', borderRadius: '10px', background: 'var(--border)', flexShrink: 0 }} />
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
                   <div style={{ height: '12px', background: 'var(--border)', borderRadius: '6px', width: '60%' }} />
                   <div style={{ height: '10px', background: 'var(--border)', borderRadius: '6px', width: '90%' }} />
@@ -212,7 +212,7 @@ export default function NewWorksPage() {
                 }}
               >
                 {/* サムネイル */}
-                <div style={{ flexShrink: 0, width: '80px', height: '112px', borderRadius: '10px', overflow: 'hidden', background: '#f8f0f4', position: 'relative' }}>
+                <div style={{ flexShrink: 0, width: '80px', height: '100px', borderRadius: '10px', overflow: 'hidden', background: '#f8f0f4', position: 'relative' }}>
                   <Image
                     src={work.imageURL?.large || work.imageURL?.small || ''}
                     alt={work.title}
