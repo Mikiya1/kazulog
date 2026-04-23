@@ -264,15 +264,15 @@ export default function FavoritesPage() {
                           {removedIds.includes(fav.actress_id) ? '🤍' : '💖'}
                         </button>
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
-                          <div style={{ height: '80px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ height: '120px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
                               <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'contain', objectPosition: 'center' }} unoptimized />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
                             )}
                           </div>
-                          <div style={{ padding: '6px 8px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
+                          <div style={{ padding: '8px 10px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
                             <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
                               作品を見る →
                             </div>
@@ -407,10 +407,10 @@ export default function FavoritesPage() {
                           onClick={() => window.open(work.affiliateURL, '_blank')}
                           style={{ flexShrink: 0, width: '100px', cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', background: 'var(--card)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                         >
-                          <div style={{ width: '100px', height: '80px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ width: '100px', height: '120px', position: 'relative', background: '#f8f0f4' }}>
                             <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                           </div>
-                          <div style={{ padding: '6px 8px' }}>
+                          <div style={{ padding: '8px 10px' }}>
                             <div style={{ fontSize: '10px', color: 'var(--subtext)', marginBottom: '2px' }}>{work.date}</div>
                             <div style={{
                               fontSize: '11px', fontWeight: '600', color: 'var(--text)',
