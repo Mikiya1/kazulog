@@ -324,7 +324,7 @@ export default function ActressesPage() {
                   </div>
                   {actress.tags.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {actress.tags.slice(0, 3).map(tag => (
+                      {actress.tags.slice(0, 5).map(tag => (
                         <span key={tag} style={{
                           fontSize: '10px', padding: '2px 8px', borderRadius: '20px',
                           background: '#FD297B18', color: '#FD297B', fontWeight: '600',
