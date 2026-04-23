@@ -264,16 +264,16 @@ export default function FavoritesPage() {
                           {removedIds.includes(fav.actress_id) ? '🤍' : '💖'}
                         </button>
                         <div onClick={() => router.push(`/recommend?ids=${fav.actress_id}&names=${fav.actress_name}&images=${encodeURIComponent(fav.actress_image)}`)} style={{ cursor: 'pointer' }}>
-                          <div style={{ height: '110px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ height: '80px', position: 'relative', background: '#f8f0f4' }}>
                             {fav.actress_image ? (
-                              <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                              <Image src={fav.actress_image} alt={fav.actress_name} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} unoptimized />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>👩</div>
                             )}
                           </div>
-                          <div style={{ padding: '10px' }}>
-                            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
-                            <div style={{ fontSize: '11px', marginTop: '4px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
+                          <div style={{ padding: '6px 8px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fav.actress_name}</div>
+                            <div style={{ fontSize: '10px', marginTop: '2px', fontWeight: '600', background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' } as React.CSSProperties}>
                               作品を見る →
                             </div>
                           </div>
@@ -379,7 +379,7 @@ export default function FavoritesPage() {
                   >
                     <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 2px #FD297B44' }}>
                       {actress.actress_image ? (
-                        <Image src={actress.actress_image} alt={actress.actress_name} width={44} height={44} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                        <Image src={actress.actress_image} alt={actress.actress_name} width={44} height={44} style={{ objectFit: 'cover', objectPosition: 'center top' }} unoptimized />
                       ) : (
                         <div style={{ width: '44px', height: '44px', background: '#f8f0f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>👩</div>
                       )}
@@ -407,7 +407,7 @@ export default function FavoritesPage() {
                           onClick={() => window.open(work.affiliateURL, '_blank')}
                           style={{ flexShrink: 0, width: '100px', cursor: 'pointer', borderRadius: '12px', overflow: 'hidden', background: 'var(--card)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                         >
-                          <div style={{ width: '100px', height: '110px', position: 'relative', background: '#f8f0f4' }}>
+                          <div style={{ width: '100px', height: '80px', position: 'relative', background: '#f8f0f4' }}>
                             <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                           </div>
                           <div style={{ padding: '6px 8px' }}>
