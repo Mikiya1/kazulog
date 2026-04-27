@@ -168,13 +168,11 @@ export default function StoryPage() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* タイムバー */}
+      {/* タイムバー：現在の女優のバーだけ表示 */}
       <div style={{ display: 'flex', gap: '4px', padding: '12px 12px 8px' }}>
-        {params.ids.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: '2px', background: '#fff', width: i < currentIdx ? '100%' : i === currentIdx ? `${progress}%` : '0%' }} />
-          </div>
-        ))}
+        <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: '2px', background: '#fff', width: `${progress}%`, transition: 'width 0.05s linear' }} />
+        </div>
       </div>
 
       {/* 女優情報 */}
