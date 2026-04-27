@@ -158,33 +158,37 @@ export default function SwipePage() {
 
   const [tagUpdating, setTagUpdating] = useState(false)
   const [tagUpdated, setTagUpdated] = useState(false)
+  const [showTagSelector, setShowTagSelector] = useState(false)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
-  const applyTagsFromSwipe = async () => {
-    if (!user || likedItems.length === 0) return
-    setTagUpdating(true)
-
+  // いいねした女優のタグを集計
+  const swipeTagCounts = (() => {
     const tagCount: Record<string, number> = {}
     likedItems.forEach(a => {
       a.tags.forEach(tag => {
         tagCount[tag] = (tagCount[tag] || 0) + 1
       })
     })
+    return Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 15)
+  })()
 
-    const topTags = Object.entries(tagCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
+  const applyTagsFromSwipe = async () => {
+    if (!user || selectedTags.length === 0) return
+    setTagUpdating(true)
 
-    for (const [tag, score] of topTags) {
+    const tagCountMap = Object.fromEntries(swipeTagCounts)
+    for (const tag of selectedTags) {
       await supabase.from('user_preferred_tags').upsert({
         user_id: user.id,
         tag_name: tag,
-        score: score,
+        score: tagCountMap[tag] ?? 1,
         is_manual: false,
       }, { onConflict: 'user_id,tag_name' })
     }
 
     setTagUpdating(false)
     setTagUpdated(true)
+    setShowTagSelector(false)
   }
 
   const finishSwipe = () => {
@@ -253,14 +257,47 @@ export default function SwipePage() {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {user && likedItems.length > 0 && !tagUpdated && (
-              <button
-                onClick={applyTagsFromSwipe}
-                disabled={tagUpdating}
-                style={{ width: '100%', background: 'var(--card)', color: '#FD297B', border: '2px solid #FD297B', borderRadius: '50px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: tagUpdating ? 'not-allowed' : 'pointer', opacity: tagUpdating ? 0.7 : 1 }}
-              >
-                {tagUpdating ? '反映中...' : '🏷️ 診断結果を好みタグに反映する'}
-              </button>
+            {user && likedItems.length > 0 && !tagUpdated && swipeTagCounts.length > 0 && (
+              <>
+                {!showTagSelector ? (
+                  <button
+                    onClick={() => { setShowTagSelector(true); setSelectedTags(swipeTagCounts.slice(0, 5).map(([tag]) => tag)) }}
+                    style={{ width: '100%', background: 'var(--card)', color: '#FD297B', border: '2px solid #FD297B', borderRadius: '50px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    🏷️ 診断結果を好みタグに反映する
+                  </button>
+                ) : (
+                  <div style={{ background: 'var(--card)', borderRadius: '20px', padding: '16px', border: '1.5px solid var(--border)' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px' }}>反映するタグを選んでください</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                      {swipeTagCounts.map(([tag, count]) => {
+                        const selected = selectedTags.includes(tag)
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() => setSelectedTags(prev => selected ? prev.filter(t => t !== tag) : [...prev, tag])}
+                            style={{
+                              padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                              background: selected ? '#FD297B' : 'var(--bg)',
+                              color: selected ? '#fff' : 'var(--text)',
+                              border: selected ? 'none' : '1.5px solid var(--border)',
+                            }}
+                          >
+                            {tag} ×{count}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      onClick={applyTagsFromSwipe}
+                      disabled={tagUpdating || selectedTags.length === 0}
+                      style={{ width: '100%', background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '12px', fontSize: '14px', fontWeight: '700', cursor: tagUpdating || selectedTags.length === 0 ? 'not-allowed' : 'pointer', opacity: tagUpdating || selectedTags.length === 0 ? 0.7 : 1 }}
+                    >
+                      {tagUpdating ? '反映中...' : `選択した${selectedTags.length}個のタグを反映`}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
             {tagUpdated && (
               <div style={{ textAlign: 'center', padding: '12px', background: '#4cd96418', borderRadius: '50px', fontSize: '14px', fontWeight: '700', color: '#4cd964' }}>
