@@ -21,6 +21,8 @@ type RecommendedWork = {
   image_large: string
   volume: number | null
   date: string | null
+  actress_names: string[] | null
+  work_tags: string[] | null
 }
 
 export default function RecommendedActresses({ compact = false }: { compact?: boolean }) {
@@ -212,11 +214,26 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
                 </div>
                 <div style={{ flex: 1, padding: '10px 10px 10px 0', minWidth: 0 }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text)', lineHeight: 1.4,
-                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>
                     {w.title}
                   </div>
-                  {w.volume && (
-                    <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px' }}>{w.date ? `📅 ${new Date(w.date).toLocaleDateString('ja-JP', {year: 'numeric', month: 'numeric', day: 'numeric'})}発売　` : ''}{w.volume ? `🕐 ${w.volume}分` : ''}</div>
+                  {w.actress_names && w.actress_names.length > 0 && (
+                    <div style={{ fontSize: '11px', color: '#FD297B', fontWeight: '600', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      👩 {w.actress_names.map(n => n.split('（')[0]).join(' / ')}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '3px' }}>
+                    {w.date ? `📅 ${new Date(w.date).toLocaleDateString('ja-JP', {year: 'numeric', month: 'numeric', day: 'numeric'})}発売` : ''}
+                    {w.volume ? `　🕐 ${w.volume}分` : ''}
+                  </div>
+                  {w.work_tags && w.work_tags.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '4px' }}>
+                      {w.work_tags.slice(0, 3).map(tag => (
+                        <span key={tag} style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '20px', background: '#FD297B18', color: '#FD297B', fontWeight: '600' }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
