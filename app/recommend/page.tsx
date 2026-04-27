@@ -6,7 +6,13 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import FavoriteButton from '../components/FavoriteButton'
-import { getWorksByActressId, type WorkFromDB } from '../lib/db'
+import { supabase } from '../lib/supabase'
+
+type WorkFromDB = {
+  id: string; title: string; affiliate_url: string
+  image_large: string; image_small: string
+  volume: number | null; date: string | null
+}
 
 function RecommendContent() {
   const router = useRouter()
@@ -37,13 +43,17 @@ function RecommendContent() {
     setHasMore(true)
     const soloOnly = sort === 'rank_solo' || sort === 'date_solo'
     const actualSort = sort === 'rank_solo' ? 'rank' : sort === 'date_solo' ? 'date' : sort
-    getWorksByActressId(selectedActress.id, actualSort, HITS, 0, soloOnly)
-      .then(items => {
-        setWorks(items)
-        setHasMore(items.length === HITS)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    supabase.rpc('get_works_by_actress', {
+      p_actress_id: selectedActress.id,
+      p_sort: actualSort,
+      p_limit: HITS,
+      p_offset: 0,
+      p_solo_only: soloOnly,
+    }).then(({ data }) => {
+      setWorks(data ?? [])
+      setHasMore((data ?? []).length === HITS)
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [selectedActress, sort])
 
   const loadMore = () => {
