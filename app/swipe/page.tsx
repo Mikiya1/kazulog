@@ -9,35 +9,45 @@ import { supabase } from '../lib/supabase'
 type Actress = {
   id: string
   name: string
-  imageUrl: string
+  image_url: string
   tags: string[]
+  debut_year: number | null
+  cup: string | null
+  height: number | null
 }
 
-const FEATURED_ACTRESSES: Actress[] = [
-  { id: '1044864', name: '河北彩伽', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kawakita_saika.jpg', tags: ['Eカップ', '169cm'] },
-  { id: '1088602', name: '逢沢みゆ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/aizawa_miyu.jpg', tags: [] },
-  { id: '1092427', name: '北岡果林', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kitaoka_karin.jpg', tags: [] },
-  { id: '1099472', name: '瀬戸環奈', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/seto_kanna.jpg', tags: [] },
-  { id: '1065724', name: '乙アリス', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/otu_arisu.jpg', tags: [] },
-  { id: '1044099', name: '美園和花', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/misono_waka.jpg', tags: ['Gカップ'] },
-  { id: '1054998', name: '松本いちか', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/matumoto_itika.jpg', tags: ['Cカップ', '153cm'] },
-  { id: '1076785', name: '神木麗', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kamiki_rei.jpg', tags: ['Gカップ', '169cm'] },
-  { id: '1068671', name: '北野未奈', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kitano_mina.jpg', tags: ['Hカップ'] },
-  { id: '1042129', name: '七沢みあ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/nanasawa_mia.jpg', tags: ['Cカップ', '145cm'] },
-]
+const SWIPED_KEY = 'kazulog_swiped_actresses'
+const LIKED_KEY = 'kazulog_liked_actresses'
 
-const MORE_ACTRESSES: Actress[] = [
-  { id: '1069697', name: 'MINAMO', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/minamo.jpg', tags: [] },
-  { id: '26225', name: '波多野結衣', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/hatano_yui.jpg', tags: ['Eカップ', '163cm'] },
-  { id: '1085754', name: '九井スナオ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kokonoi_sunao.jpg', tags: [] },
-  { id: '1055590', name: '青空ひかり', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/aozora_hikari.jpg', tags: ['Dカップ', '153cm'] },
-  { id: '1084337', name: '羽月乃蒼', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/haruna_noa.jpg', tags: [] },
-  { id: '1075302', name: '柏木こなつ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/kasiwagi_konatu.jpg', tags: ['Fカップ', '155cm'] },
-  { id: '1069702', name: '天馬ゆい', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/tenma_yui.jpg', tags: ['Cカップ', '162cm'] },
-  { id: '1046723', name: '皆月ひかる', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/minazuki_hikaru.jpg', tags: ['Bカップ', '148cm'] },
-  { id: '1064154', name: '月野かすみ', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/tukino_kasumi.jpg', tags: ['Hカップ', '151cm'] },
-  { id: '1062074', name: '宮島めい', imageUrl: 'https://pics.dmm.co.jp/mono/actjpgs/miyazima_mei.jpg', tags: [] },
-]
+const getSwipedIds = (): string[] => {
+  try {
+    return JSON.parse(localStorage.getItem(SWIPED_KEY) || '[]')
+  } catch { return [] }
+}
+
+const addSwipedId = (id: string) => {
+  try {
+    const ids = getSwipedIds()
+    if (!ids.includes(id)) {
+      localStorage.setItem(SWIPED_KEY, JSON.stringify([...ids, id]))
+    }
+  } catch {}
+}
+
+const getLikedActresses = (): Actress[] => {
+  try {
+    return JSON.parse(localStorage.getItem(LIKED_KEY) || '[]')
+  } catch { return [] }
+}
+
+const addLikedActress = (actress: Actress) => {
+  try {
+    const liked = getLikedActresses()
+    if (!liked.find(a => a.id === actress.id)) {
+      localStorage.setItem(LIKED_KEY, JSON.stringify([...liked, actress]))
+    }
+  } catch {}
+}
 
 export default function SwipePage() {
   const router = useRouter()
@@ -51,289 +61,327 @@ export default function SwipePage() {
   const isDragging = useRef(false)
   const [done, setDone] = useState(false)
   const [superLikeToast, setSuperLikeToast] = useState<string | null>(null)
+  const [user, setUser] = useState<{ id: string } | null>(null)
 
   useEffect(() => {
-    setCards(FEATURED_ACTRESSES)
-    setLoading(false)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+    loadCards()
   }, [])
 
-  const current = cards[index]
-  const next = cards[index + 1]
-  const nextNext = cards[index + 2]
-
-  const addToFavorites = async (actress: Actress) => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-
-    const { error } = await supabase
-      .from('favorites')
-      .upsert({
-        user_id: session.user.id,
-        actress_id: actress.id,
-        actress_name: actress.name,
-        actress_image: actress.imageUrl,
-      }, { onConflict: 'user_id,actress_id' })
-
-    if (!error) {
-      setSuperLikeToast(`${actress.name} をお気に入りに追加しました！`)
-      setTimeout(() => setSuperLikeToast(null), 3000)
-    }
+  const loadCards = async () => {
+    setLoading(true)
+    const swipedIds = getSwipedIds()
+    const { data } = await supabase.rpc('get_swipe_actresses', {
+      p_exclude_ids: swipedIds,
+      p_limit: 20,
+    })
+    setCards(data ?? [])
+    setIndex(0)
+    setDone(false)
+    setLoading(false)
   }
 
-  const handleSwipe = (dir: 'left' | 'right' | 'up') => {
-    if (animating) return
-    setDragOffset({ x: 0, y: 0 })
+  const current = cards[index]
+
+  const triggerAnim = (dir: 'left' | 'right' | 'up', actress: Actress) => {
     setAnimating(dir)
-    const liked = dir === 'right' || dir === 'up'
-    if (liked && current) setLikedItems(prev => [...prev, current])
-    if (dir === 'up' && current) addToFavorites(current)
+    addSwipedId(actress.id)
+
+    if (dir === 'right' || dir === 'up') {
+      addLikedActress(actress)
+      setLikedItems(prev => [...prev, actress])
+      if (dir === 'up') {
+        setSuperLikeToast(`⭐ ${actress.name.split('（')[0]}をスーパーライク！`)
+        setTimeout(() => setSuperLikeToast(null), 2000)
+      }
+    }
 
     setTimeout(() => {
       setAnimating(null)
-      if (index + 1 >= cards.length) setDone(true)
-      else setIndex(prev => prev + 1)
-    }, 320)
+      setDragOffset({ x: 0, y: 0 })
+      if (index + 1 >= cards.length) {
+        setDone(true)
+      } else {
+        setIndex(prev => prev + 1)
+      }
+    }, 350)
   }
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (animating) return
-    const t = e.touches[0]
-    dragStart.current = { x: t.clientX, y: t.clientY }
+  const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
+    const point = 'touches' in e ? e.touches[0] : e
+    dragStart.current = { x: point.clientX, y: point.clientY }
     isDragging.current = true
   }
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current || !dragStart.current || animating) return
-    const t = e.touches[0]
+  const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDragging.current || !dragStart.current) return
+    const point = 'touches' in e ? e.touches[0] : e
     setDragOffset({
-      x: t.clientX - dragStart.current.x,
-      y: t.clientY - dragStart.current.y,
+      x: point.clientX - dragStart.current.x,
+      y: point.clientY - dragStart.current.y,
     })
   }
 
-  const onTouchEnd = () => {
-    if (!isDragging.current) return
+  const handleDragEnd = () => {
+    if (!isDragging.current || !current) return
     isDragging.current = false
     const { x, y } = dragOffset
-    if (x > 80) handleSwipe('right')
-    else if (x < -80) handleSwipe('left')
-    else if (y < -80) handleSwipe('up')
+    if (y < -80 && Math.abs(x) < 60) triggerAnim('up', current)
+    else if (x > 80) triggerAnim('right', current)
+    else if (x < -80) triggerAnim('left', current)
     else setDragOffset({ x: 0, y: 0 })
-    dragStart.current = null
   }
 
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (animating) return
-    dragStart.current = { x: e.clientX, y: e.clientY }
-    isDragging.current = true
-  }
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !dragStart.current || animating) return
-    setDragOffset({
-      x: e.clientX - dragStart.current.x,
-      y: e.clientY - dragStart.current.y,
-    })
-  }
-
-  const onMouseUp = () => {
-    if (!isDragging.current) return
-    isDragging.current = false
-    const { x, y } = dragOffset
-    if (x > 80) handleSwipe('right')
-    else if (x < -80) handleSwipe('left')
-    else if (y < -80) handleSwipe('up')
-    else setDragOffset({ x: 0, y: 0 })
-    dragStart.current = null
-  }
-
-  const getCardTransform = () => {
-    if (animating === 'right') return 'translateX(130%) rotate(20deg)'
-    if (animating === 'left') return 'translateX(-130%) rotate(-20deg)'
-    if (animating === 'up') return 'translateY(-130%) rotate(5deg)'
-    if (isDragging.current || dragOffset.x !== 0 || dragOffset.y !== 0) {
-      return `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.08}deg)`
+  // スワイプ完了後に好みタグを更新
+  const finishSwipe = async () => {
+    if (!user || likedItems.length === 0) {
+      router.push('/favorites?tab=recommended')
+      return
     }
-    return 'none'
+
+    // いいねした女優のタグを集計してuser_preferred_tagsに反映
+    const tagCount: Record<string, number> = {}
+    likedItems.forEach(a => {
+      a.tags.forEach(tag => {
+        tagCount[tag] = (tagCount[tag] || 0) + 1
+      })
+    })
+
+    // 上位5タグをupsert
+    const topTags = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+
+    for (const [tag, score] of topTags) {
+      await supabase.from('user_preferred_tags').upsert({
+        user_id: user.id,
+        tag_name: tag,
+        score: score,
+        is_manual: false,
+      }, { onConflict: 'user_id,tag_name' })
+    }
+
+    router.push('/favorites?tab=recommended')
   }
 
-  const showLike = animating === 'right' || dragOffset.x > 40
-  const showNope = animating === 'left' || dragOffset.x < -40
-  const showSuper = animating === 'up' || dragOffset.y < -40
+  const rotate = Math.min(Math.max(dragOffset.x / 15, -20), 20)
+
+  const getCardStyle = (): React.CSSProperties => ({
+    position: 'absolute',
+    width: '100%',
+    transition: animating ? 'transform 0.35s ease, opacity 0.35s ease' : 'none',
+    transform: animating === 'right'
+      ? 'translateX(120%) rotate(20deg)'
+      : animating === 'left'
+      ? 'translateX(-120%) rotate(-20deg)'
+      : animating === 'up'
+      ? 'translateY(-120%)'
+      : `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${rotate}deg)`,
+    opacity: animating ? 0 : 1,
+    cursor: 'grab',
+    userSelect: 'none',
+  })
+
+  const likeOpacity = Math.min(dragOffset.x / 80, 1)
+  const nopeOpacity = Math.min(-dragOffset.x / 80, 1)
+  const superOpacity = Math.min(-dragOffset.y / 80, 1)
 
   if (loading) {
     return (
       <>
         <Header />
-        <main style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ fontSize: '40px' }}>🔥</div>
-          <div style={{ fontSize: '16px', color: 'var(--subtext)', fontWeight: '600' }}>読み込み中...</div>
-        </main>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', color: 'var(--subtext)', fontSize: '14px' }}>
+          読み込み中...
+        </div>
       </>
     )
   }
 
-  if (done) {
+  if (done || cards.length === 0) {
     return (
       <>
         <Header />
-        <main style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '24px', maxWidth: '480px', margin: '0 auto' }}>
-          <div style={{ fontSize: '64px' }}>🎉</div>
-          <h2 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text)', textAlign: 'center' }}>診断完了！</h2>
-          <p style={{ fontSize: '14px', color: 'var(--subtext)', textAlign: 'center' }}>あなたの好みが分かりました</p>
-          <div style={{ background: 'var(--card)', borderRadius: '20px', padding: '20px', width: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--subtext)', marginBottom: '12px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase' }}>気になった女優</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {likedItems.map(item => (
-                <span key={item.id} style={{
-                  background: 'linear-gradient(135deg, #FD297B15, #FF655B10)',
-                  color: '#FD297B', fontSize: '13px', padding: '6px 14px',
-                  borderRadius: '20px', fontWeight: '600', border: '1px solid #FD297B33',
-                }}>{item.name}</span>
-              ))}
+        <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '480px', margin: '0 auto', padding: '40px 20px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎉</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', marginBottom: '8px' }}>診断完了！</div>
+            <div style={{ fontSize: '14px', color: 'var(--subtext)' }}>
+              {likedItems.length}人の女優にいいね！しました
             </div>
           </div>
-          <button
-            onClick={() => {
-              const ids = likedItems.map(i => i.id)
-              const names = likedItems.map(i => i.name)
-              const images = likedItems.map(i => encodeURIComponent(i.imageUrl))
-              router.push(`/recommend?ids=${ids.join(',')}&names=${names.join(',')}&images=${images.join(',')}`)
-            }}
-            style={{ background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '18px', fontSize: '17px', fontWeight: '700', width: '100%', boxShadow: 'var(--shadow-btn)' }}
-          >
-            おすすめを見る 💖
-          </button>
-          <button
-            onClick={() => {
-              setCards(MORE_ACTRESSES)
-              setIndex(0)
-              setDone(false)
-            }}
-            style={{ background: 'var(--card)', color: '#FD297B', border: '1.5px solid #FD297B44', borderRadius: '50px', padding: '16px', fontSize: '15px', fontWeight: '600', width: '100%' }}
-          >
-            もっとスワイプする +10 🔥
-          </button>
-          <button
-            onClick={() => { setCards(FEATURED_ACTRESSES); setIndex(0); setLikedItems([]); setDone(false) }}
-            style={{ background: 'var(--card)', color: 'var(--subtext)', border: '1.5px solid var(--border)', borderRadius: '50px', padding: '16px', fontSize: '15px', fontWeight: '600', width: '100%' }}
-          >
-            もう一度やり直す
-          </button>
+
+          {likedItems.length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>いいね！した女優</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                {likedItems.map(a => (
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card)', borderRadius: '50px', padding: '4px 12px 4px 4px', border: '1.5px solid var(--border)' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                      <Image src={a.image_url} alt={a.name} width={28} height={28} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '600' }}>{a.name.split('（')[0]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              onClick={finishSwipe}
+              style={{ width: '100%', background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: 'var(--shadow-btn)' }}
+            >
+              {user ? 'おすすめを見る ✨' : '結果を見る ✨'}
+            </button>
+            <button
+              onClick={loadCards}
+              style={{ width: '100%', background: 'var(--card)', color: 'var(--text)', border: '1.5px solid var(--border)', borderRadius: '50px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+            >
+              もっとスワイプする 🔄
+            </button>
+          </div>
         </main>
       </>
     )
   }
-
-  if (!current) return null
 
   return (
     <>
       <Header />
-
-      {/* スーパーLIKEトースト通知 */}
       {superLikeToast && (
-        <div style={{
-          position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)',
-          background: '#34E0FE', color: '#fff',
-          padding: '10px 20px', borderRadius: '20px',
-          fontSize: '13px', fontWeight: '700',
-          zIndex: 999, boxShadow: '0 4px 16px rgba(52,224,254,0.4)',
-          whiteSpace: 'nowrap',
-        }}>
-          ⭐ {superLikeToast}
+        <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', background: '#1da1f2', color: '#fff', borderRadius: '50px', padding: '10px 20px', fontSize: '14px', fontWeight: '700', zIndex: 1000, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          {superLikeToast}
         </div>
       )}
+      <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '480px', margin: '0 auto', padding: '16px 20px 100px', display: 'flex', flexDirection: 'column' }}>
 
-      <main style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 20px 32px', maxWidth: '480px', margin: '0 auto' }}>
-
-        <div style={{ width: '100%', display: 'flex', gap: '6px', marginBottom: '20px' }}>
-          {cards.map((_, i) => (
-            <div key={i} style={{
-              flex: 1, height: '4px', borderRadius: '2px',
-              backgroundImage: i <= index ? 'linear-gradient(135deg, #FD297B, #FF655B)' : 'none',
-              backgroundColor: i <= index ? undefined : 'var(--border)',
-            }} />
-          ))}
-        </div>
-
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '500' }}>残り {cards.length - index} 人</span>
-          <span style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '500' }}>{index + 1} / {cards.length}</span>
-        </div>
-
-        <div style={{ width: '100%', position: 'relative', height: '460px', marginBottom: '28px' }}>
-          {nextNext && (
-            <div style={{ position: 'absolute', inset: 0, background: 'var(--card)', borderRadius: '24px', transform: 'scale(0.90) translateY(16px)', zIndex: 0, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }} />
-          )}
-          {next && (
-            <div style={{ position: 'absolute', inset: 0, background: 'var(--card)', borderRadius: '24px', transform: 'scale(0.95) translateY(8px)', zIndex: 1, boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }} />
-          )}
-
-          <div
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseUp}
-            style={{
-              position: 'absolute', inset: 0, background: 'var(--card)', borderRadius: '24px',
-              overflow: 'hidden', zIndex: 2,
-              transform: getCardTransform(),
-              transition: animating ? 'transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
-              boxShadow: 'var(--shadow-card)', cursor: 'grab', userSelect: 'none',
-            }}
-          >
-            <div style={{ height: '360px', position: 'relative', overflow: 'hidden', pointerEvents: 'none' }}>
-              {current.imageUrl ? (
-                <Image
-                  src={current.imageUrl}
-                  alt={current.name}
-                  fill
-                  style={{ objectFit: 'contain', objectPosition: 'center', background: '#f8f0f4' }}
-                  unoptimized
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #FD297B22, #FF655B33)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '80px' }}>👩</div>
-              )}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.6) 100%)' }} />
-
-              {showLike && (
-                <div style={{ position: 'absolute', top: '32px', left: '24px', border: '3px solid #4CD964', borderRadius: '8px', padding: '6px 16px', transform: 'rotate(-15deg)', color: '#4CD964', fontSize: '28px', fontWeight: '800', letterSpacing: '2px', opacity: Math.min(1, Math.abs(dragOffset.x) / 80) }}>LIKE</div>
-              )}
-              {showNope && (
-                <div style={{ position: 'absolute', top: '32px', right: '24px', border: '3px solid #FF3B30', borderRadius: '8px', padding: '6px 16px', transform: 'rotate(15deg)', color: '#FF3B30', fontSize: '28px', fontWeight: '800', letterSpacing: '2px', opacity: Math.min(1, Math.abs(dragOffset.x) / 80) }}>NOPE</div>
-              )}
-              {showSuper && (
-                <div style={{ position: 'absolute', bottom: '80px', left: '50%', transform: 'translateX(-50%)', border: '3px solid #34E0FE', borderRadius: '8px', padding: '6px 20px', color: '#34E0FE', fontSize: '26px', fontWeight: '800', letterSpacing: '2px', whiteSpace: 'nowrap', opacity: Math.min(1, Math.abs(dragOffset.y) / 80) }}>SUPER LIKE</div>
-              )}
-            </div>
-
-            <div style={{ padding: '18px 20px 20px', pointerEvents: 'none' }}>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text)', marginBottom: '8px' }}>
-                {current.name}
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {current.tags.map(tag => (
-                  <span key={tag} style={{ background: '#F5F6FA', color: '#666', fontSize: '12px', padding: '5px 12px', borderRadius: '20px', fontWeight: '500', border: '1px solid var(--border)' }}>{tag}</span>
-                ))}
-              </div>
-            </div>
+        {/* 進捗 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '600' }}>
+            {index + 1} / {cards.length}
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--subtext)', fontWeight: '600' }}>
+            💖 {likedItems.length}人
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center' }}>
-          <button onClick={() => handleSwipe('left')} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--card)', border: '1.5px solid var(--border)', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>✕</button>
-          <button onClick={() => handleSwipe('up')} style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'var(--card)', border: '1.5px solid #34E0FE44', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(52,224,254,0.2)', color: '#34E0FE' }}>⭐</button>
-          <button onClick={() => handleSwipe('right')} style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--gradient)', border: 'none', fontSize: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-btn)' }}>💖</button>
+        {/* カードエリア */}
+        <div style={{ position: 'relative', flex: 1, minHeight: '520px' }}>
+
+          {/* 次のカード */}
+          {cards[index + 1] && (
+            <div style={{ position: 'absolute', width: '100%', transform: 'scale(0.95)', transformOrigin: 'bottom', filter: 'brightness(0.8)' }}>
+              <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+                <div style={{ height: '420px', position: 'relative', background: '#f8f0f4' }}>
+                  {cards[index + 1].image_url && (
+                    <Image src={cards[index + 1].image_url} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 現在のカード */}
+          {current && (
+            <div
+              style={getCardStyle()}
+              onMouseDown={handleDragStart}
+              onMouseMove={handleDragMove}
+              onMouseUp={handleDragEnd}
+              onMouseLeave={handleDragEnd}
+              onTouchStart={handleDragStart}
+              onTouchMove={handleDragMove}
+              onTouchEnd={handleDragEnd}
+            >
+              <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+                {/* 画像 */}
+                <div style={{ height: '420px', position: 'relative', background: '#f8f0f4' }}>
+                  {current.image_url && (
+                    <Image src={current.image_url} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                  )}
+
+                  {/* LIKE/NOPE/SUPER表示 */}
+                  {likeOpacity > 0.1 && (
+                    <div style={{ position: 'absolute', top: '24px', left: '24px', border: '3px solid #4cd964', borderRadius: '8px', padding: '4px 12px', color: '#4cd964', fontSize: '24px', fontWeight: '900', transform: `rotate(-15deg)`, opacity: likeOpacity }}>
+                      LIKE 💖
+                    </div>
+                  )}
+                  {nopeOpacity > 0.1 && (
+                    <div style={{ position: 'absolute', top: '24px', right: '24px', border: '3px solid #ff3b30', borderRadius: '8px', padding: '4px 12px', color: '#ff3b30', fontSize: '24px', fontWeight: '900', transform: `rotate(15deg)`, opacity: nopeOpacity }}>
+                      NOPE ✕
+                    </div>
+                  )}
+                  {superOpacity > 0.1 && (
+                    <div style={{ position: 'absolute', top: '24px', left: '50%', transform: 'translateX(-50%)', border: '3px solid #1da1f2', borderRadius: '8px', padding: '4px 12px', color: '#1da1f2', fontSize: '24px', fontWeight: '900', opacity: superOpacity }}>
+                      SUPER ⭐
+                    </div>
+                  )}
+                </div>
+
+                {/* 女優情報 */}
+                <div style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '800' }}>{current.name.split('（')[0]}</div>
+                    {current.debut_year && (
+                      <div style={{ fontSize: '12px', color: 'var(--subtext)', fontWeight: '600' }}>
+                        🎬 {new Date().getFullYear() - current.debut_year}年目
+                      </div>
+                    )}
+                  </div>
+
+                  {/* スペック */}
+                  {(current.cup || current.height) && (
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      {current.cup && (
+                        <span style={{ fontSize: '12px', background: '#FD297B18', color: '#FD297B', borderRadius: '20px', padding: '3px 10px', fontWeight: '700' }}>
+                          {current.cup}カップ
+                        </span>
+                      )}
+                      {current.height && (
+                        <span style={{ fontSize: '12px', background: 'var(--border)', color: 'var(--subtext)', borderRadius: '20px', padding: '3px 10px', fontWeight: '700' }}>
+                          {current.height}cm
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* タグ */}
+                  {current.tags.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {current.tags.slice(0, 4).map(tag => (
+                        <span key={tag} style={{ fontSize: '11px', background: 'var(--border)', color: 'var(--subtext)', borderRadius: '20px', padding: '3px 10px', fontWeight: '600' }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--subtext)', fontWeight: '500' }}>
-          ✕ NOPE　　⭐ お気に入り追加　　💖 LIKE
+        {/* ボタン */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0 0' }}>
+          <button
+            onClick={() => current && triggerAnim('left', current)}
+            style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #ff3b30', color: '#ff3b30', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >✕</button>
+          <button
+            onClick={() => current && triggerAnim('up', current)}
+            style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#fff', border: '2px solid #1da1f2', color: '#1da1f2', fontSize: '20px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >⭐</button>
+          <button
+            onClick={() => current && triggerAnim('right', current)}
+            style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #4cd964', color: '#4cd964', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >💖</button>
         </div>
 
+        <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--subtext)' }}>
+          ← スワイプで判断 / 上にスワイプでスーパーライク ⭐
+        </div>
       </main>
     </>
   )
