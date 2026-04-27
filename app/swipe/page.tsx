@@ -349,7 +349,7 @@ export default function SwipePage() {
         </div>
 
         {/* ボタン */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '10px 0 0' }}>
           <button
             onClick={() => current && triggerAnim('left', current)}
             style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #ff3b30', color: '#ff3b30', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
