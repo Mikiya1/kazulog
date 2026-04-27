@@ -70,11 +70,14 @@ export default function NewWorksPage() {
       const favNames = new Set(favorites.map(f => f.actress_name))
 
       const VR_GENRES = ['VR', 'VR専用', 'ハイクオリティVR', '8KVR']
+      const isVR = (work: Work) => {
+        const genres = work.iteminfo?.genre?.map((g: any) => g.name) ?? []
+        if (genres.some((g: string) => VR_GENRES.includes(g))) return true
+        if (work.title && (work.title.includes('【VR】') || work.title.includes('[VR]') || work.title.includes('VR専用'))) return true
+        return false
+      }
       results.forEach(({ fav, items }) => {
-        items.filter(work => {
-          const genres = work.iteminfo?.genre?.map((g: any) => g.name) ?? []
-          return !genres.some((g: string) => VR_GENRES.includes(g))
-        }).forEach(work => {
+        items.filter(work => !isVR(work)).forEach(work => {
           if (map.has(work.content_id)) {
             // 既存にこの女優を追加
             const existing = map.get(work.content_id)!
