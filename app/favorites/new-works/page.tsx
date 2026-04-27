@@ -69,8 +69,12 @@ export default function NewWorksPage() {
       const map = new Map<string, WorkWithActresses>()
       const favNames = new Set(favorites.map(f => f.actress_name))
 
+      const VR_GENRES = ['VR', 'VR専用', 'ハイクオリティVR', '8KVR']
       results.forEach(({ fav, items }) => {
-        items.forEach(work => {
+        items.filter(work => {
+          const genres = work.iteminfo?.genre?.map((g: any) => g.name) ?? []
+          return !genres.some((g: string) => VR_GENRES.includes(g))
+        }).forEach(work => {
           if (map.has(work.content_id)) {
             // 既存にこの女優を追加
             const existing = map.get(work.content_id)!
@@ -87,6 +91,7 @@ export default function NewWorksPage() {
               matchedActresses: matched.length > 0 ? matched : [fav.actress_name],
             })
           }
+        })
         })
       })
 
