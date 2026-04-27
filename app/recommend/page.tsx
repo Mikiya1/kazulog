@@ -53,7 +53,7 @@ function RecommendContent() {
       setWorks(data ?? [])
       setHasMore((data ?? []).length === HITS)
       setLoading(false)
-    }).catch(() => setLoading(false))
+    })
   }, [selectedActress, sort])
 
   const loadMore = () => {
