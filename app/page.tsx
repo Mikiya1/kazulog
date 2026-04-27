@@ -50,6 +50,7 @@ export default function Home() {
   const [showAllWeekly, setShowAllWeekly] = useState(false)
   const [showAllMonthly, setShowAllMonthly] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [seenActresses, setSeenActresses] = useState<string[]>([])
 
   useEffect(() => {
     const load = async () => {
@@ -68,36 +69,33 @@ export default function Home() {
       const favs = (favsRes.data ?? []) as Favorite[]
       setFavorites(favs)
 
-      // お気に入り女優の最新作を取得
+      // お気に入り女優の最新作を取得（女優ごとに1件ずつ）
       if (favs.length > 0) {
         const actressIds = favs.map(f => f.actress_id)
-        const { data: newWorksData } = await supabase
-          .from('work_actresses')
-          .select('work_id, actress_id')
-          .in('actress_id', actressIds)
-
-        if (newWorksData && newWorksData.length > 0) {
-          const workIds = [...new Set(newWorksData.map(w => w.work_id))].slice(0, 50)
-          const { data: works } = await supabase
-            .from('works')
-            .select('id, title, affiliate_url, image_small, image_large, volume, date')
-            .in('id', workIds)
-            .order('date', { ascending: false })
-            .limit(20)
-
-          const actressMap = new Map(newWorksData.map(w => [w.work_id, w.actress_id]))
-          const favNameMap = new Map(favs.map(f => [f.actress_id, f.actress_name]))
-
-          setNewWorks((works ?? []).map(w => ({
-            ...w,
-            actress_name: favNameMap.get(actressMap.get(w.id) ?? '') ?? '',
-          })))
-        }
+        const { data: newWorksData } = await supabase.rpc('get_favorite_latest_works', {
+          p_actress_ids: actressIds,
+          p_limit: 20,
+        })
+        const favNameMap = new Map(favs.map(f => [f.actress_id, f.actress_name]))
+        setNewWorks((newWorksData ?? []).map((w: any) => ({
+          ...w,
+          actress_name: favNameMap.get(w.actress_id) ?? '',
+        })))
       }
 
       setLoading(false)
     }
     load()
+    // 既読女優を取得
+    try {
+      const raw = localStorage.getItem('kazulog_story_seen')
+      if (raw) {
+        const data = JSON.parse(raw)
+        const now = Date.now()
+        const filtered = data.filter((d: any) => now - d.ts < 86400000)
+        setSeenActresses(filtered.map((d: any) => d.id))
+      }
+    } catch {}
   }, [])
 
   const formatDate = (dateStr: string | null) => {
@@ -125,7 +123,7 @@ export default function Home() {
               <div key={fav.actress_id} style={{ flexShrink: 0, textAlign: 'center', width: '68px' }}>
                 <div
                   onClick={() => router.push(`/story?index=${idx}&ids=${favorites.map(f => f.actress_id).join(',')}&names=${favorites.map(f => encodeURIComponent(f.actress_name)).join(',')}&images=${favorites.map(f => encodeURIComponent(f.actress_image)).join(',')}`)}
-                  style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', margin: '0 auto 4px', boxShadow: '0 0 0 2.5px #FD297B, 0 0 0 4px white' }}
+                  style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', margin: '0 auto 4px', boxShadow: seenActresses.includes(fav.actress_id) ? '0 0 0 2.5px #ccc, 0 0 0 4px white' : '0 0 0 2.5px #FD297B, 0 0 0 4px white' }}
                 >
                   {fav.actress_image ? (
                     <Image src={fav.actress_image} alt={fav.actress_name} width={60} height={60} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />

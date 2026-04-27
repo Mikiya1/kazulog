@@ -17,12 +17,38 @@ type Work = {
   date: string | null
 }
 
+const SEEN_KEY = 'kazulog_story_seen'
+
+const getSeenActresses = (): string[] => {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY)
+    if (!raw) return []
+    const data = JSON.parse(raw)
+    const now = Date.now()
+    // 1日経過したものは削除
+    const filtered = data.filter((d: { id: string; ts: number }) => now - d.ts < 86400000)
+    localStorage.setItem(SEEN_KEY, JSON.stringify(filtered))
+    return filtered.map((d: { id: string }) => d.id)
+  } catch { return [] }
+}
+
+const markAsSeen = (actressId: string) => {
+  try {
+    const seen = getSeenActresses()
+    if (seen.includes(actressId)) return
+    const raw = localStorage.getItem(SEEN_KEY)
+    const data = raw ? JSON.parse(raw) : []
+    data.push({ id: actressId, ts: Date.now() })
+    localStorage.setItem(SEEN_KEY, JSON.stringify(data))
+  } catch {}
+}
+
 export default function StoryPage() {
   const router = useRouter()
-  const [params, setParams] = useState<{ ids: string[]; names: string[]; images: string[]; startIndex: number } | null>(null)
+  const [params, setParams] = useState<{ ids: string[]; names: string[]; images: string[] } | null>(null)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [progress, setProgress] = useState(0)
-  const [works, setWorks] = useState<Work[]>([])
+  const [work, setWork] = useState<Work | null>(null)
   const [workLoading, setWorkLoading] = useState(false)
   const [paused, setPaused] = useState(false)
   const touchStartY = useRef<number | null>(null)
@@ -30,27 +56,49 @@ export default function StoryPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const p = new URLSearchParams(window.location.search)
-    const ids = p.get('ids')?.split(',') ?? []
-    const names = p.get('names')?.split(',').map(n => decodeURIComponent(n)) ?? []
-    const images = p.get('images')?.split(',').map(i => decodeURIComponent(i)) ?? []
+    const allIds = p.get('ids')?.split(',') ?? []
+    const allNames = p.get('names')?.split(',').map(n => decodeURIComponent(n)) ?? []
+    const allImages = p.get('images')?.split(',').map(i => decodeURIComponent(i)) ?? []
     const startIndex = parseInt(p.get('index') ?? '0')
-    setParams({ ids, names, images, startIndex })
-    setCurrentIdx(startIndex)
+
+    // 未表示の女優だけに絞る（開始位置の女優は必ず含める）
+    const seen = getSeenActresses()
+    const filteredIds: string[] = []
+    const filteredNames: string[] = []
+    const filteredImages: string[] = []
+
+    // 開始位置の女優を先頭に
+    filteredIds.push(allIds[startIndex])
+    filteredNames.push(allNames[startIndex])
+    filteredImages.push(allImages[startIndex])
+
+    // 残りを未表示順に追加
+    allIds.forEach((id, i) => {
+      if (i !== startIndex && !seen.includes(id)) {
+        filteredIds.push(id)
+        filteredNames.push(allNames[i])
+        filteredImages.push(allImages[i])
+      }
+    })
+
+    setParams({ ids: filteredIds, names: filteredNames, images: filteredImages })
+    setCurrentIdx(0)
   }, [])
 
   useEffect(() => {
     if (!params) return
-    loadWorks(params.ids[currentIdx])
+    loadWork(params.ids[currentIdx])
+    markAsSeen(params.ids[currentIdx])
   }, [currentIdx, params])
 
-  const loadWorks = async (actressId: string) => {
+  const loadWork = async (actressId: string) => {
     setWorkLoading(true)
-    setWorks([])
+    setWork(null)
     const { data } = await supabase.rpc('get_works_by_actress_for_story', {
       p_actress_id: actressId,
-      p_limit: 5,
+      p_limit: 1,
     })
-    setWorks(data ?? [])
+    setWork(data?.[0] ?? null)
     setWorkLoading(false)
   }
 
@@ -96,9 +144,7 @@ export default function StoryPage() {
     setPaused(false)
     if (touchStartY.current === null) return
     const diff = e.changedTouches[0].clientY - touchStartY.current
-    if (diff > 80) {
-      router.back()
-    }
+    if (diff > 80) router.back()
     touchStartY.current = null
   }
 
@@ -118,24 +164,21 @@ export default function StoryPage() {
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: '#000', maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', zIndex: 1000 }}
+      style={{ position: 'fixed', inset: 0, background: '#111', maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', zIndex: 1000 }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* タイムバー */}
-      <div style={{ display: 'flex', gap: '4px', padding: '12px 12px 8px', zIndex: 10 }}>
+      <div style={{ display: 'flex', gap: '4px', padding: '12px 12px 8px' }}>
         {params.ids.map((_, i) => (
           <div key={i} style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: '2px', background: '#fff',
-              width: i < currentIdx ? '100%' : i === currentIdx ? `${progress}%` : '0%',
-            }} />
+            <div style={{ height: '100%', borderRadius: '2px', background: '#fff', width: i < currentIdx ? '100%' : i === currentIdx ? `${progress}%` : '0%' }} />
           </div>
         ))}
       </div>
 
       {/* 女優情報 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 12px 12px', zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 12px 12px' }}>
         <div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #fff', flexShrink: 0 }}>
           {actress.image ? (
             <Image src={actress.image} alt={actress.name} width={36} height={36} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
@@ -144,58 +187,56 @@ export default function StoryPage() {
           )}
         </div>
         <div>
-          <div style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>{actress.name}</div>
+          <div style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>{actress.name.split('（')[0]}</div>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>最新単体作品</div>
         </div>
         <button onClick={() => router.back()} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
       </div>
 
-      {/* 作品リスト */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 12px' }}>
+      {/* 作品 */}
+      <div style={{ flex: 1, padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {workLoading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>
-            読み込み中...
-          </div>
-        ) : works.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>
-            単体作品が見つかりませんでした
-          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>読み込み中...</div>
+        ) : !work ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>単体作品が見つかりませんでした</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {works.map(w => (
-              <div
-                key={w.id}
-                onClick={() => window.open(w.affiliate_url, '_blank')}
-                style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}
-              >
-                <div style={{ width: '80px', height: '100px', position: 'relative', flexShrink: 0 }}>
-                  <Image src={w.image_small || w.image_large} alt={w.title} fill style={{ objectFit: 'cover' }} unoptimized />
-                </div>
-                <div style={{ flex: 1, padding: '10px 10px 10px 0', minWidth: 0 }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#fff', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>
-                    {w.title}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-                    {w.date && <span>📅 {formatDate(w.date)}</span>}
-                    {w.volume && <span style={{ marginLeft: '8px' }}>🕐 {w.volume}分</span>}
-                  </div>
-                  <div style={{ marginTop: '8px', display: 'inline-block', background: '#FD297B', color: '#fff', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700' }}>
-                    作品を見る →
-                  </div>
-                </div>
+          <>
+            {/* サムネイル */}
+            <div
+              onClick={() => window.open(work.affiliate_url, '_blank')}
+              style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0, maxHeight: '340px' }}
+            >
+              <Image src={work.image_large || work.image_small} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
+            </div>
+
+            {/* 作品情報 */}
+            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '16px', padding: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff', lineHeight: 1.5, marginBottom: '8px' }}>
+                {work.title}
               </div>
-            ))}
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                {work.date && <span>📅 {formatDate(work.date)}</span>}
+                {work.volume && <span style={{ marginLeft: '10px' }}>🕐 {work.volume}分</span>}
+              </div>
+              <button
+                onClick={() => window.open(work.affiliate_url, '_blank')}
+                style={{ width: '100%', background: '#FD297B', color: '#fff', border: 'none', borderRadius: '50px', padding: '12px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+              >
+                作品を見る →
+              </button>
+            </div>
+
             <button
               onClick={() => router.push(`/recommend?ids=${actress.id}&names=${actress.name}&images=${encodeURIComponent(actress.image)}`)}
-              style={{ width: '100%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '12px', padding: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '50px', padding: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
             >
-              {actress.name.split('（')[0]}の作品をもっと見る →
+              {actress.name.split('（')[0]}の作品を全部見る
             </button>
-          </div>
+          </>
         )}
       </div>
 
-      {/* 左右タップエリア */}
+      {/* 左右タップ */}
       <div style={{ position: 'absolute', left: 0, top: '60px', bottom: 0, width: '30%' }} onClick={goPrev} />
       <div style={{ position: 'absolute', right: 0, top: '60px', bottom: 0, width: '30%' }} onClick={goNext} />
     </div>
