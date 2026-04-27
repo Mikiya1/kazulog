@@ -288,7 +288,7 @@ export default function SwipePage() {
                 {/* 画像 */}
                 <div style={{ height: '340px', position: 'relative', background: '#f8f0f4' }}>
                   {current.image_url && (
-                    <Image src={getLargeImageUrl(current.image_url)} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                    <Image src={getLargeImageUrl(current.image_url)} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top', filter: 'contrast(1.05) saturate(1.1) sharpen(1)', imageRendering: 'crisp-edges' } as React.CSSProperties} unoptimized />
                   )}
 
                   {/* LIKE/NOPE/SUPER表示 */}
