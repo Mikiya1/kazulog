@@ -172,9 +172,9 @@ function RecommendContent() {
                         {work.title.length > 30 ? work.title.slice(0, 30) + '...' : work.title}
                       </div>
 
-                      {work.actresses.length > 0 && (
+                      {(work.actresses ?? []).length > 0 && (
                         <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          👩 {work.actresses.map(a => a.name).join(' / ')}
+                          👩 {(work.actresses ?? []).map(a => a.name).join(' / ')}
                         </div>
                       )}
                       {work.volume && (
