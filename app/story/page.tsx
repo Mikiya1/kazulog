@@ -61,8 +61,7 @@ export default function StoryPage() {
     const allImages = p.get('images')?.split(',').map(i => decodeURIComponent(i)) ?? []
     const startIndex = parseInt(p.get('index') ?? '0')
 
-    // 未表示の女優だけに絞る（開始位置の女優は必ず含める）
-    const seen = getSeenActresses()
+    // 押した女優を先頭にして全女優を並べる
     const filteredIds: string[] = []
     const filteredNames: string[] = []
     const filteredImages: string[] = []
@@ -72,9 +71,9 @@ export default function StoryPage() {
     filteredNames.push(allNames[startIndex])
     filteredImages.push(allImages[startIndex])
 
-    // 残りを未表示順に追加
+    // 残りを順番に追加
     allIds.forEach((id, i) => {
-      if (i !== startIndex && !seen.includes(id)) {
+      if (i !== startIndex) {
         filteredIds.push(id)
         filteredNames.push(allNames[i])
         filteredImages.push(allImages[i])
