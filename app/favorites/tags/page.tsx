@@ -177,7 +177,7 @@ export default function PreferredTagsPage() {
             {/* 自動検出タグ */}
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '10px', color: 'var(--subtext)' }}>
-                自動検出タグ（{autoTags.length}/10）
+                自動検出タグ（合計{preferredTags.length}/10）
               </div>
               {loading ? (
                 <div style={{ color: 'var(--subtext)', fontSize: '13px' }}>読み込み中...</div>
@@ -198,7 +198,7 @@ export default function PreferredTagsPage() {
             {/* 手動タグ */}
             <div style={{ marginBottom: '24px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '10px', color: 'var(--subtext)' }}>
-                手動追加タグ（{manualTags.length}/10）
+                手動追加タグ（空き{10 - preferredTags.length}個）
               </div>
               {manualTags.length === 0 ? (
                 <div style={{ color: 'var(--subtext)', fontSize: '13px' }}>下のリストから追加できます</div>
