@@ -123,9 +123,9 @@ export default function FavoritesPage() {
             }
           })
         })
-        const sorted = Array.from(map.values()).sort((a, b) =>
-          (b.date ?? '').localeCompare(a.date ?? '')
-        )
+        const sorted = Array.from(map.values())
+          .filter(w => !w.title.includes('VR'))
+          .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
         setTimelineWorks(sorted)
         setTimelineLoading(false)
       })
@@ -377,7 +377,7 @@ export default function FavoritesPage() {
                           </div>
                         )}
                         <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>
-                          {work.date ? `📅 ${work.date}` : ''}{work.volume ? `　🕐 ${work.volume}分` : ''}
+                          {work.date ? `📅 ${new Date(work.date).getFullYear()}/${new Date(work.date).getMonth()+1}/${new Date(work.date).getDate()}発売` : ''}{work.volume ? `　🕐 ${work.volume}分` : ''}
                         </div>
                       </div>
                     </div>
@@ -430,7 +430,7 @@ export default function FavoritesPage() {
                             <Image src={work.imageURL?.large || work.imageURL?.small || ''} alt={work.title} fill style={{ objectFit: 'cover' }} unoptimized />
                           </div>
                           <div style={{ padding: '8px 10px' }}>
-                            <div style={{ fontSize: '10px', color: 'var(--subtext)', marginBottom: '2px' }}>{work.date}</div>
+                            <div style={{ fontSize: '10px', color: 'var(--subtext)', marginBottom: '2px' }}>{work.date ? `${new Date(work.date).getFullYear()}/${new Date(work.date).getMonth()+1}/${new Date(work.date).getDate()}発売` : ''}</div>
                             <div style={{
                               fontSize: '11px', fontWeight: '600', color: 'var(--text)',
                               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
