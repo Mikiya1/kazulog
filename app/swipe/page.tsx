@@ -16,6 +16,8 @@ type Actress = {
   height: number | null
 }
 
+const getLargeImageUrl = (url: string) => url.replace('/thumbnail/', '/')
+
 const SWIPED_KEY = 'kazulog_swiped_actresses'
 const LIKED_KEY = 'kazulog_liked_actresses'
 
@@ -117,6 +119,7 @@ export default function SwipePage() {
 
   const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
     if (!isDragging.current || !dragStart.current) return
+    if ('touches' in e) e.preventDefault()
     const point = 'touches' in e ? e.touches[0] : e
     setDragOffset({
       x: point.clientX - dragStart.current.x,
@@ -248,7 +251,7 @@ export default function SwipePage() {
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                 <div style={{ height: '420px', position: 'relative', background: '#f8f0f4' }}>
                   {cards[index + 1].image_url && (
-                    <Image src={cards[index + 1].image_url} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                    <Image src={getLargeImageUrl(cards[index + 1].image_url)} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                   )}
                 </div>
               </div>
@@ -264,14 +267,14 @@ export default function SwipePage() {
               onMouseUp={handleDragEnd}
               onMouseLeave={handleDragEnd}
               onTouchStart={handleDragStart}
-              onTouchMove={handleDragMove}
+              onTouchMove={(e) => handleDragMove(e)}
               onTouchEnd={handleDragEnd}
             >
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                 {/* 画像 */}
                 <div style={{ height: '420px', position: 'relative', background: '#f8f0f4' }}>
                   {current.image_url && (
-                    <Image src={current.image_url} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                    <Image src={getLargeImageUrl(current.image_url)} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                   )}
 
                   {/* LIKE/NOPE/SUPER表示 */}
