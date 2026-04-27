@@ -127,19 +127,20 @@ export default function Home() {
 
         // 既読女優の中で新作が出てるか確認
         if (seenIds.length > 0) {
-          const { data: latestWorks } = await supabase
+          supabase
             .from('actress_latest_works')
             .select('actress_id, latest_work_date')
             .in('actress_id', seenIds)
-
-          const newSet = new Set<string>()
-          ;(latestWorks ?? []).forEach((lw: any) => {
-            const seenEntry = data.find((d: any) => d.id === lw.actress_id)
-            if (seenEntry && new Date(lw.latest_work_date).getTime() > seenEntry.ts) {
-              newSet.add(lw.actress_id)
-            }
-          })
-          setNewWorkActresses(newSet)
+            .then(({ data: latestWorks }) => {
+              const newSet = new Set<string>()
+              ;(latestWorks ?? []).forEach((lw: any) => {
+                const seenEntry = data.find((d: any) => d.id === lw.actress_id)
+                if (seenEntry && new Date(lw.latest_work_date).getTime() > seenEntry.ts) {
+                  newSet.add(lw.actress_id)
+                }
+              })
+              setNewWorkActresses(newSet)
+            })
         }
       }
     } catch {}
