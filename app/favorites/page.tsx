@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Header from '../components/Header'
 import { supabase } from '../lib/supabase'
@@ -42,7 +42,8 @@ const HITS = 30
 
 export default function FavoritesPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>('list')
+  const searchParams = useSearchParams()
+  const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'list')
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [removedIds, setRemovedIds] = useState<string[]>([])
   const [favPage, setFavPage] = useState(1)

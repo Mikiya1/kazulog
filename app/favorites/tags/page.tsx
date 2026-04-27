@@ -143,9 +143,19 @@ export default function PreferredTagsPage() {
       <Header />
       <main style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)', maxWidth: '480px', margin: '0 auto', padding: '24px 20px 48px' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <button onClick={() => router.push('/favorites?tab=recommended')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', padding: 0 }}>←</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0 }}>好みタグ ✨</h2>
+          <button
+            onClick={() => router.push('/favorites?tab=recommended')}
+            style={{
+              background: 'var(--gradient)', color: '#fff', border: 'none',
+              borderRadius: '50px', padding: '8px 16px',
+              fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+              boxShadow: 'var(--shadow-btn)',
+            }}
+          >
+            おすすめを見る →
+          </button>
         </div>
         <p style={{ fontSize: '13px', color: 'var(--subtext)', marginBottom: '24px' }}>
           お気に入り女優から自動検出（最大10個）＋手動追加（最大10個）できます。
