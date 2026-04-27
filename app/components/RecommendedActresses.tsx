@@ -13,6 +13,14 @@ type RecommendedActress = {
   matched_count: number
 }
 
+type CostarActress = {
+  id: string
+  name: string
+  image_url: string
+  tags: string[]
+  costar_count: number
+}
+
 type RecommendedWork = {
   id: string
   title: string
@@ -29,6 +37,7 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
   const router = useRouter()
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [actresses, setActresses] = useState<RecommendedActress[]>([])
+  const [costars, setCostars] = useState<CostarActress[]>([])
   const [works, setWorks] = useState<RecommendedWork[]>([])
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [preferredTags, setPreferredTags] = useState<string[]>([])
@@ -187,6 +196,46 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--subtext)', marginTop: '2px' }}>
                   {a.matched_count}タグ一致
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* よく共演してる女優 */}
+      {costars.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '4px' }}>よく共演してる女優 🎬</div>
+          <div style={{ fontSize: '12px', color: 'var(--subtext)', marginBottom: '12px' }}>お気に入り女優と一緒に出てる女優</div>
+          <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', paddingBottom: '8px' }}>
+            {costars.map(a => (
+              <div key={a.id} style={{ flexShrink: 0, width: '90px', textAlign: 'center' }}>
+                <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 6px' }}>
+                  <div
+                    onClick={() => router.push(`/recommend?ids=${a.id}&names=${a.name}&images=${encodeURIComponent(a.image_url)}`)}
+                    style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 0 0 2px #FF655B66' }}
+                  >
+                    <Image src={a.image_url} alt={a.name} width={80} height={80} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                  </div>
+                  <button
+                    onClick={() => toggleFavorite(a as any)}
+                    style={{
+                      position: 'absolute', bottom: '-2px', right: '-2px',
+                      width: '22px', height: '22px', borderRadius: '50%',
+                      background: '#fff', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    {favoriteIds.includes(a.id) ? '💖' : '🤍'}
+                  </button>
+                </div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {a.name.split('（')[0]}
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--subtext)', marginTop: '2px' }}>
+                  {a.costar_count}回共演
                 </div>
               </div>
             ))}
