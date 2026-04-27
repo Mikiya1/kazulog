@@ -12,6 +12,15 @@ type Favorite = {
   actress_image: string
 }
 
+type Newcomer = {
+  id: string
+  name: string
+  image_url: string
+  debut_year: number
+  popular_rank: number | null
+  work_count: number
+}
+
 type Work = {
   id: string
   title: string
@@ -52,6 +61,7 @@ export default function Home() {
   const [showAllMonthly, setShowAllMonthly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [seenActresses, setSeenActresses] = useState<string[]>([])
+  const [newcomers, setNewcomers] = useState<Newcomer[]>([])
 
   useEffect(() => {
     const load = async () => {
@@ -59,17 +69,19 @@ export default function Home() {
       const u = session?.user ?? null
       setUser(u)
 
-      const [weeklyRes, monthlyRes, favsRes, activeRes] = await Promise.all([
+      const [weeklyRes, monthlyRes, favsRes, activeRes, newcomerRes] = await Promise.all([
         supabase.rpc('get_ranking_works', { p_sort: 'weekly', p_limit: 10 }),
         supabase.rpc('get_ranking_works', { p_sort: 'monthly', p_limit: 10 }),
         u ? supabase.from('favorites').select('actress_id, actress_name, actress_image').eq('user_id', u.id).limit(20) : Promise.resolve({ data: [] }),
         u ? supabase.rpc('get_active_favorites', { p_user_id: u.id, p_months: 3 }) : Promise.resolve({ data: [] }),
+        supabase.rpc('get_rising_newcomers', { p_limit: 10 }),
       ])
 
       setWeeklyWorks(weeklyRes.data ?? [])
       setMonthlyWorks(monthlyRes.data ?? [])
       const favs = (favsRes.data ?? []) as Favorite[]
       setFavorites(favs)
+      setNewcomers(newcomerRes.data ?? [])
       // ストーリー用：直近3ヶ月に新作がある女優だけ
       const activeIds = new Set((activeRes.data ?? []).map((f: any) => f.actress_id))
       const activeFavs = favs.filter(f => activeIds.has(f.actress_id))
@@ -195,6 +207,45 @@ export default function Home() {
               </button>
             )}
           </div>
+
+          {/* 注目の新人 */}
+          {newcomers.length > 0 && (
+            <div style={{ marginBottom: '28px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', marginBottom: '14px' }}>🌟 注目の新人</div>
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+                {newcomers.map((a, i) => (
+                  <div
+                    key={a.id}
+                    onClick={() => router.push(`/recommend?ids=${a.id}&names=${a.name}&images=${encodeURIComponent(a.image_url)}`)}
+                    style={{ flexShrink: 0, width: '80px', textAlign: 'center', cursor: 'pointer' }}
+                  >
+                    <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 6px' }}>
+                      <div style={{ width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', boxShadow: i < 2 ? '0 0 0 2.5px #FFD700, 0 0 0 4px white' : '0 0 0 2px #FD297B44' }}>
+                        <Image src={a.image_url.replace('/thumbnail/', '/')} alt={a.name} width={72} height={72} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
+                      </div>
+                      {i < 2 && (
+                        <div style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#FFD700', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800' }}>
+                          🏆
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {a.name.split('（')[0]}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--subtext)', marginTop: '2px' }}>
+                      {a.debut_year}年デビュー
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => router.push('/newcomers')}
+                style={{ width: '100%', marginTop: '10px', background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: '50px', padding: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', color: 'var(--subtext)' }}
+              >
+                新人一覧を見る →
+              </button>
+            </div>
+          )}
 
           {/* お気に入り女優の最新作 */}
           {newWorks.length > 0 && (
