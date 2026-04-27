@@ -57,12 +57,28 @@ export default function SwipePage() {
   const [loading, setLoading] = useState(true)
   const [index, setIndex] = useState(0)
   const [likedItems, setLikedItems] = useState<Actress[]>([])
-  const [animating, setAnimating] = useState<'left' | 'right' | 'up' | null>(null)
+  const [animating, setAnimating] = useState<'left' | 'right' | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const isDragging = useRef(false)
+  const cardRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+    const onMove = (e: TouchEvent) => {
+      if (!isDragging.current || !dragStart.current) return
+      e.preventDefault()
+      const point = e.touches[0]
+      setDragOffset({
+        x: point.clientX - dragStart.current.x,
+        y: point.clientY - dragStart.current.y,
+      })
+    }
+    el.addEventListener('touchmove', onMove, { passive: false })
+    return () => el.removeEventListener('touchmove', onMove)
+  }, [index, cards])
   const [done, setDone] = useState(false)
-  const [superLikeToast, setSuperLikeToast] = useState<string | null>(null)
   const [user, setUser] = useState<{ id: string } | null>(null)
 
   useEffect(() => {
@@ -87,16 +103,21 @@ export default function SwipePage() {
 
   const current = cards[index]
 
-  const triggerAnim = (dir: 'left' | 'right' | 'up', actress: Actress) => {
+  const triggerAnim = async (dir: 'left' | 'right', actress: Actress) => {
     setAnimating(dir)
     addSwipedId(actress.id)
 
-    if (dir === 'right' || dir === 'up') {
+    if (dir === 'right') {
       addLikedActress(actress)
       setLikedItems(prev => [...prev, actress])
-      if (dir === 'up') {
-        setSuperLikeToast(`⭐ ${actress.name.split('（')[0]}をスーパーライク！`)
-        setTimeout(() => setSuperLikeToast(null), 2000)
+      // 即お気に入り登録
+      if (user) {
+        await supabase.from('favorites').upsert({
+          user_id: user.id,
+          actress_id: actress.id,
+          actress_name: actress.name,
+          actress_image: actress.image_url,
+        }, { onConflict: 'user_id,actress_id' })
       }
     }
 
@@ -117,13 +138,11 @@ export default function SwipePage() {
     isDragging.current = true
   }
 
-  const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleDragMove = (e: React.MouseEvent) => {
     if (!isDragging.current || !dragStart.current) return
-    if ('touches' in e) e.preventDefault()
-    const point = 'touches' in e ? e.touches[0] : e
     setDragOffset({
-      x: point.clientX - dragStart.current.x,
-      y: point.clientY - dragStart.current.y,
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
     })
   }
 
@@ -131,7 +150,7 @@ export default function SwipePage() {
     if (!isDragging.current || !current) return
     isDragging.current = false
     const { x, y } = dragOffset
-    if (y < -80 && Math.abs(x) < 60) triggerAnim('up', current)
+    if (y < -80 && Math.abs(x) < 60) triggerAnim('right', current)
     else if (x > 80) triggerAnim('right', current)
     else if (x < -80) triggerAnim('left', current)
     else setDragOffset({ x: 0, y: 0 })
@@ -161,7 +180,6 @@ export default function SwipePage() {
 
   const likeOpacity = Math.min(dragOffset.x / 80, 1)
   const nopeOpacity = Math.min(-dragOffset.x / 80, 1)
-  const superOpacity = Math.min(-dragOffset.y / 80, 1)
 
   if (loading) {
     return (
@@ -225,11 +243,7 @@ export default function SwipePage() {
   return (
     <>
       <Header />
-      {superLikeToast && (
-        <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', background: '#1da1f2', color: '#fff', borderRadius: '50px', padding: '10px 20px', fontSize: '14px', fontWeight: '700', zIndex: 1000, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-          {superLikeToast}
-        </div>
-      )}
+
       <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '480px', margin: '0 auto', padding: '16px 20px 100px', display: 'flex', flexDirection: 'column' }}>
 
         {/* 進捗 */}
@@ -261,13 +275,13 @@ export default function SwipePage() {
           {/* 現在のカード */}
           {current && (
             <div
+              ref={cardRef}
               style={getCardStyle()}
               onMouseDown={handleDragStart}
               onMouseMove={handleDragMove}
               onMouseUp={handleDragEnd}
               onMouseLeave={handleDragEnd}
               onTouchStart={handleDragStart}
-              onTouchMove={(e) => handleDragMove(e)}
               onTouchEnd={handleDragEnd}
             >
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
@@ -288,11 +302,7 @@ export default function SwipePage() {
                       NOPE ✕
                     </div>
                   )}
-                  {superOpacity > 0.1 && (
-                    <div style={{ position: 'absolute', top: '24px', left: '50%', transform: 'translateX(-50%)', border: '3px solid #1da1f2', borderRadius: '8px', padding: '4px 12px', color: '#1da1f2', fontSize: '24px', fontWeight: '900', opacity: superOpacity }}>
-                      SUPER ⭐
-                    </div>
-                  )}
+
                 </div>
 
                 {/* 女優情報 */}
@@ -344,10 +354,7 @@ export default function SwipePage() {
             onClick={() => current && triggerAnim('left', current)}
             style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #ff3b30', color: '#ff3b30', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >✕</button>
-          <button
-            onClick={() => current && triggerAnim('up', current)}
-            style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#fff', border: '2px solid #1da1f2', color: '#1da1f2', fontSize: '20px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >⭐</button>
+
           <button
             onClick={() => current && triggerAnim('right', current)}
             style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #4cd964', color: '#4cd964', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -355,7 +362,7 @@ export default function SwipePage() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--subtext)' }}>
-          ← スワイプで判断 / 上にスワイプでスーパーライク ⭐
+          ← スワイプで判断
         </div>
       </main>
     </>
