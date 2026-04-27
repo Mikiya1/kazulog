@@ -61,12 +61,17 @@ function RecommendContent() {
     const nextOffset = offset + HITS
     const soloOnly = sort === 'rank_solo' || sort === 'date_solo'
     const actualSort = sort === 'rank_solo' ? 'rank' : sort === 'date_solo' ? 'date' : sort
-    getWorksByActressId(selectedActress.id, actualSort, HITS, nextOffset, soloOnly)
-      .then(items => {
-        setWorks(prev => [...prev, ...items])
-        setOffset(nextOffset)
-        setHasMore(items.length === HITS)
-      })
+    supabase.rpc('get_works_by_actress', {
+      p_actress_id: selectedActress.id,
+      p_sort: actualSort,
+      p_limit: HITS,
+      p_offset: nextOffset,
+      p_solo_only: soloOnly,
+    }).then(({ data }) => {
+      setWorks(prev => [...prev, ...(data ?? [])])
+      setHasMore((data ?? []).length === HITS)
+      setOffset(nextOffset)
+    })
   }
 
   if (likedActresses.length === 0) {
