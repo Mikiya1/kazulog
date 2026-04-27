@@ -244,7 +244,7 @@ export default function SwipePage() {
     <>
       <Header />
 
-      <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '480px', margin: '0 auto', padding: '16px 20px 100px', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '480px', margin: '0 auto', padding: '12px 16px 80px', display: 'flex', flexDirection: 'column' }}>
 
         {/* 進捗 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -257,13 +257,13 @@ export default function SwipePage() {
         </div>
 
         {/* カードエリア */}
-        <div style={{ position: 'relative', flex: 1, minHeight: '520px' }}>
+        <div style={{ position: 'relative', flex: 1, minHeight: '420px' }}>
 
           {/* 次のカード */}
           {cards[index + 1] && (
             <div style={{ position: 'absolute', width: '100%', transform: 'scale(0.95)', transformOrigin: 'bottom', filter: 'brightness(0.8)' }}>
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-                <div style={{ height: '420px', position: 'relative', background: '#f8f0f4' }}>
+                <div style={{ height: '300px', position: 'relative', background: '#f8f0f4' }}>
                   {cards[index + 1].image_url && (
                     <Image src={getLargeImageUrl(cards[index + 1].image_url)} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                   )}
@@ -286,7 +286,7 @@ export default function SwipePage() {
             >
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                 {/* 画像 */}
-                <div style={{ height: '420px', position: 'relative', background: '#f8f0f4' }}>
+                <div style={{ height: '300px', position: 'relative', background: '#f8f0f4' }}>
                   {current.image_url && (
                     <Image src={getLargeImageUrl(current.image_url)} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                   )}
@@ -306,7 +306,7 @@ export default function SwipePage() {
                 </div>
 
                 {/* 女優情報 */}
-                <div style={{ padding: '16px' }}>
+                <div style={{ padding: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
                     <div style={{ fontSize: '20px', fontWeight: '800' }}>{current.name.split('（')[0]}</div>
                     {current.debut_year && (
@@ -335,7 +335,7 @@ export default function SwipePage() {
                   {/* タグ */}
                   {current.tags.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {current.tags.slice(0, 4).map(tag => (
+                      {current.tags.slice(0, 3).map(tag => (
                         <span key={tag} style={{ fontSize: '11px', background: 'var(--border)', color: 'var(--subtext)', borderRadius: '20px', padding: '3px 10px', fontWeight: '600' }}>
                           {tag}
                         </span>
