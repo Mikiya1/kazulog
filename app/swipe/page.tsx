@@ -75,7 +75,7 @@ export default function SwipePage() {
     const swipedIds = getSwipedIds()
     const { data } = await supabase.rpc('get_swipe_actresses', {
       p_exclude_ids: swipedIds,
-      p_limit: 20,
+      p_limit: 10,
     })
     setCards(data ?? [])
     setIndex(0)
@@ -134,35 +134,7 @@ export default function SwipePage() {
     else setDragOffset({ x: 0, y: 0 })
   }
 
-  // スワイプ完了後に好みタグを更新
-  const finishSwipe = async () => {
-    if (!user || likedItems.length === 0) {
-      router.push('/favorites?tab=recommended')
-      return
-    }
-
-    // いいねした女優のタグを集計してuser_preferred_tagsに反映
-    const tagCount: Record<string, number> = {}
-    likedItems.forEach(a => {
-      a.tags.forEach(tag => {
-        tagCount[tag] = (tagCount[tag] || 0) + 1
-      })
-    })
-
-    // 上位5タグをupsert
-    const topTags = Object.entries(tagCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-
-    for (const [tag, score] of topTags) {
-      await supabase.from('user_preferred_tags').upsert({
-        user_id: user.id,
-        tag_name: tag,
-        score: score,
-        is_manual: false,
-      }, { onConflict: 'user_id,tag_name' })
-    }
-
+  const finishSwipe = () => {
     router.push('/favorites?tab=recommended')
   }
 
