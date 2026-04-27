@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 const NAV_ITEMS = [
   { label: 'ホーム', icon: '🏠', path: '/' },
   { label: '女優一覧', icon: '👩', path: '/actresses' },
+  { label: '診断', icon: '🔥', path: '/swipe' },
   { label: 'ジャンル', icon: '🔍', path: '/genre-search' },
   { label: 'お気に入り', icon: '💖', path: '/favorites' },
 ]
