@@ -61,7 +61,7 @@ export default function NewWorksPage() {
       favorites.map(fav =>
         fetch(`/api/dmm?actress=${encodeURIComponent(fav.actress_name)}&hits=30&sort=date&offset=1`)
           .then(r => r.json())
-          .then(data => ({ fav, items: (data.result?.items ?? []) as Work[] }))
+          .then(data => ({ fav, items: ((data.result?.items ?? []) as Work[]).filter(w => !w.title.includes('VR')) }))
           .catch(() => ({ fav, items: [] as Work[] }))
       )
     ).then(results => {
