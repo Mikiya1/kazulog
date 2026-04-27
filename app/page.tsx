@@ -19,6 +19,7 @@ type Newcomer = {
   debut_year: number
   popular_rank: number | null
   work_count: number
+  first_work_date: string | null
 }
 
 type Work = {
@@ -233,7 +234,7 @@ export default function Home() {
                       {a.name.split('（')[0]}
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--subtext)', marginTop: '2px' }}>
-                      {a.debut_year}年デビュー
+                      {a.first_work_date ? `${new Date(a.first_work_date).getFullYear()}年${new Date(a.first_work_date).getMonth()+1}月デビュー` : `${a.debut_year}年デビュー`}
                     </div>
                   </div>
                 ))}

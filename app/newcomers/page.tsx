@@ -13,6 +13,7 @@ type Newcomer = {
   debut_year: number
   popular_rank: number | null
   work_count: number
+  first_work_date: string | null
 }
 
 export default function NewcomersPage() {
@@ -60,7 +61,7 @@ export default function NewcomersPage() {
                     {a.name.split('（')[0]}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--subtext)', marginTop: '2px' }}>
-                    📅 {a.debut_year}年デビュー
+                    📅 {a.first_work_date ? `${new Date(a.first_work_date).getFullYear()}年${new Date(a.first_work_date).getMonth()+1}月デビュー` : `${a.debut_year}年デビュー`}
                     {a.popular_rank && <span style={{ marginLeft: '8px', color: '#FD297B', fontWeight: '700' }}>🏆 月間{a.popular_rank}位</span>}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>
