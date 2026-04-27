@@ -92,7 +92,6 @@ export default function NewWorksPage() {
             })
           }
         })
-        })
       })
 
       // 発売日順にソート
