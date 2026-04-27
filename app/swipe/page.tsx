@@ -156,6 +156,37 @@ export default function SwipePage() {
     else setDragOffset({ x: 0, y: 0 })
   }
 
+  const [tagUpdating, setTagUpdating] = useState(false)
+  const [tagUpdated, setTagUpdated] = useState(false)
+
+  const applyTagsFromSwipe = async () => {
+    if (!user || likedItems.length === 0) return
+    setTagUpdating(true)
+
+    const tagCount: Record<string, number> = {}
+    likedItems.forEach(a => {
+      a.tags.forEach(tag => {
+        tagCount[tag] = (tagCount[tag] || 0) + 1
+      })
+    })
+
+    const topTags = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    for (const [tag, score] of topTags) {
+      await supabase.from('user_preferred_tags').upsert({
+        user_id: user.id,
+        tag_name: tag,
+        score: score,
+        is_manual: false,
+      }, { onConflict: 'user_id,tag_name' })
+    }
+
+    setTagUpdating(false)
+    setTagUpdated(true)
+  }
+
   const finishSwipe = () => {
     router.push('/favorites?tab=recommended')
   }
@@ -222,6 +253,20 @@ export default function SwipePage() {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {user && likedItems.length > 0 && !tagUpdated && (
+              <button
+                onClick={applyTagsFromSwipe}
+                disabled={tagUpdating}
+                style={{ width: '100%', background: 'var(--card)', color: '#FD297B', border: '2px solid #FD297B', borderRadius: '50px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: tagUpdating ? 'not-allowed' : 'pointer', opacity: tagUpdating ? 0.7 : 1 }}
+              >
+                {tagUpdating ? '反映中...' : '🏷️ 診断結果を好みタグに反映する'}
+              </button>
+            )}
+            {tagUpdated && (
+              <div style={{ textAlign: 'center', padding: '12px', background: '#4cd96418', borderRadius: '50px', fontSize: '14px', fontWeight: '700', color: '#4cd964' }}>
+                ✅ 好みタグに反映しました！
+              </div>
+            )}
             <button
               onClick={finishSwipe}
               style={{ width: '100%', background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '50px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: 'var(--shadow-btn)' }}
