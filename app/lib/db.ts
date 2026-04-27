@@ -64,30 +64,26 @@ export async function getWorksByActressId(
   return (data ?? []).map(formatWork)
 }
 
-// ジャンルIDから作品を取得
+// ジャンルIDから作品を取得（VR除外・RPC版）
 export async function getWorksByGenreId(
   genreId: string,
   sort: 'date' | 'rank' = 'rank',
   limit = 20,
   offset = 0
 ): Promise<{ works: WorkFromDB[]; total: number }> {
-  // 総件数取得
-  const { count } = await supabase
-    .from('work_genres')
-    .select('work_id', { count: 'exact', head: true })
-    .eq('genre_id', genreId)
+  const { data: rpcData } = await supabase.rpc('get_works_by_genre', {
+    p_genre_id: genreId,
+    p_sort: sort,
+    p_limit: limit,
+    p_offset: offset,
+  })
 
-  const { data: workIds } = await supabase
-    .from('work_genres')
-    .select('work_id')
-    .eq('genre_id', genreId)
-    .range(offset, offset + limit - 1)
+  if (!rpcData || rpcData.length === 0) return { works: [], total: 0 }
 
-  if (!workIds || workIds.length === 0) return { works: [], total: count ?? 0 }
+  const total = Number(rpcData[0].total_count)
+  const ids = rpcData.map((r: any) => r.id)
 
-  const ids = workIds.map(w => w.work_id)
-
-  let query = supabase
+  const { data } = await supabase
     .from('works')
     .select(`
       id, title, affiliate_url, image_large, image_small, volume, date, price,
@@ -95,13 +91,9 @@ export async function getWorksByGenreId(
       work_genres(genres(id, name))
     `)
     .in('id', ids)
+    .order(sort === 'date' ? 'date' : 'id', { ascending: false })
 
-  if (sort === 'date') {
-    query = query.order('date', { ascending: false })
-  }
-
-  const { data } = await query
-  return { works: (data ?? []).map(formatWork), total: count ?? 0 }
+  return { works: (data ?? []).map(formatWork), total }
 }
 
 // 女優IDリスト × ジャンルIDリストでAND検索（RPC版）

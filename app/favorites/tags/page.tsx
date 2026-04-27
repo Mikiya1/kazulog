@@ -112,7 +112,12 @@ export default function PreferredTagsPage() {
 
   const addManualTag = async (tagName: string) => {
     if (!user) return
-    if (preferredTags.length >= 10) return
+    // DBから最新カウントを取得して確認
+    const { count } = await supabase
+      .from('user_preferred_tags')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    if ((count ?? 0) >= 10) return
     if (preferredTags.find(t => t.tag_name === tagName)) return
     await supabase.from('user_preferred_tags').upsert({
       user_id: user.id, tag_name: tagName, score: 999, is_manual: true,
