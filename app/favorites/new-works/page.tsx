@@ -99,7 +99,7 @@ export default function NewWorksPage() {
 
       // VR作品を除外してから発売日順にソート
       const sorted = Array.from(map.values())
-        .filter(w => !w.title.includes('VR'))
+        .filter(w => !w.title.includes('VR') && !w.title.includes('ＶＲ'))
         .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
       setWorks(sorted)
       setFetchLoading(false)
@@ -255,7 +255,7 @@ export default function NewWorksPage() {
 
                   {/* 発売日 */}
                   <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '6px' }}>
-                    {work.date ? `発売日: ${work.date}` : ''}
+                    {work.date ? `📅 ${new Date(work.date).getFullYear()}/${new Date(work.date).getMonth()+1}/${new Date(work.date).getDate()}発売` : ''}
                   </div>
                 </div>
               </div>
