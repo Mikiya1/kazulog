@@ -12,6 +12,8 @@ type WorkFromDB = {
   id: string; title: string; affiliate_url: string
   image_large: string; image_small: string
   volume: number | null; date: string | null
+  actresses?: { id: string; name: string }[]
+  genres?: { id: string; name: string }[]
 }
 
 function RecommendContent() {
