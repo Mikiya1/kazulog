@@ -177,6 +177,18 @@ export async function GET(request: NextRequest) {
       results.saved = items.length
     }
 
+    if (type === 'latest_works') {
+      // 全女優の最新作日付をDBから集計してactress_latest_worksに保存
+      const { data: actressIds } = await supabase
+        .from('work_actresses')
+        .select('actress_id')
+        .limit(1)
+
+      // RPC経由で一括更新
+      const { error } = await supabase.rpc('sync_actress_latest_works')
+      results.synced = !error
+    }
+
     if (type === 'by_actress') {
       // 指定女優IDの作品を大量取得
       const actressId = url.searchParams.get('actress_id') ?? ''
