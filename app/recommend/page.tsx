@@ -161,7 +161,7 @@ function RecommendContent() {
                         </div>
                       )}
                       {work.volume && (
-                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>🕐 {work.volume}分</div>
+                        <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>{work.date ? `📅 ${new Date(work.date).toLocaleDateString('ja-JP', {month: 'numeric', day: 'numeric'})}発売` : ''}　{work.volume ? `🕐 ${work.volume}分` : ''}</div>
                       )}
                       <button onClick={() => window.open(work.affiliate_url, '_blank')} style={{ marginTop: '10px', background: 'var(--gradient)', color: '#fff', border: 'none', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(253,41,123,0.3)' }}>
                         作品を見る →
