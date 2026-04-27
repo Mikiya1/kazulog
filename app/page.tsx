@@ -77,7 +77,12 @@ export default function Home() {
           p_limit: 20,
         })
         const favNameMap = new Map(favs.map(f => [f.actress_id, f.actress_name]))
-        setNewWorks((newWorksData ?? []).map((w: any) => ({
+        const sorted = [...(newWorksData ?? [])].sort((a: any, b: any) => {
+          if (!a.date) return 1
+          if (!b.date) return -1
+          return new Date(b.date).getTime() - new Date(a.date).getTime()
+        })
+        setNewWorks(sorted.map((w: any) => ({
           ...w,
           actress_name: favNameMap.get(w.actress_id) ?? '',
         })))
@@ -111,7 +116,7 @@ export default function Home() {
 
         {/* ストーリー */}
         <div style={{ padding: '16px 0 12px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ overflowX: 'auto', display: 'flex', gap: '12px', padding: '0 16px' }}>
+          <div style={{ overflowX: 'auto', display: 'flex', gap: '12px', padding: '4px 16px 4px' }}>
             <div style={{ flexShrink: 0, textAlign: 'center', width: '68px' }}>
               <div onClick={() => router.push('/actresses')} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--card)', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto 4px', fontSize: '24px' }}>+</div>
               <div style={{ fontSize: '10px', color: 'var(--subtext)', fontWeight: '600' }}>追加</div>
@@ -119,10 +124,16 @@ export default function Home() {
             {!loading && favorites.length === 0 && (
               <div style={{ display: 'flex', alignItems: 'center', color: 'var(--subtext)', fontSize: '12px' }}>お気に入り女優を追加するとここに表示されます</div>
             )}
-            {favorites.map((fav, idx) => (
+            {[...favorites].sort((a, b) => {
+              const aSeen = seenActresses.includes(a.actress_id)
+              const bSeen = seenActresses.includes(b.actress_id)
+              if (aSeen && !bSeen) return 1
+              if (!aSeen && bSeen) return -1
+              return 0
+            }).map((fav, idx) => (
               <div key={fav.actress_id} style={{ flexShrink: 0, textAlign: 'center', width: '68px' }}>
                 <div
-                  onClick={() => router.push(`/story?index=${idx}&ids=${favorites.map(f => f.actress_id).join(',')}&names=${favorites.map(f => encodeURIComponent(f.actress_name)).join(',')}&images=${favorites.map(f => encodeURIComponent(f.actress_image)).join(',')}`)}
+                  onClick={() => router.push(`/story?index=${favorites.findIndex(f => f.actress_id === fav.actress_id)}&ids=${favorites.map(f => f.actress_id).join(',')}&names=${favorites.map(f => encodeURIComponent(f.actress_name)).join(',')}&images=${favorites.map(f => encodeURIComponent(f.actress_image)).join(',')}`)}
                   style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', margin: '0 auto 4px', boxShadow: seenActresses.includes(fav.actress_id) ? '0 0 0 2.5px #ccc, 0 0 0 4px white' : '0 0 0 2.5px #FD297B, 0 0 0 4px white' }}
                 >
                   {fav.actress_image ? (
