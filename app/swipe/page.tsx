@@ -79,6 +79,7 @@ export default function SwipePage() {
     return () => el.removeEventListener('touchmove', onMove)
   }, [index, cards])
   const [done, setDone] = useState(false)
+  const [history, setHistory] = useState<number[]>([])
   const [user, setUser] = useState<{ id: string } | null>(null)
 
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function SwipePage() {
   const current = cards[index]
 
   const triggerAnim = async (dir: 'left' | 'right', actress: Actress) => {
+    setHistory(prev => [...prev, index])
     setAnimating(dir)
     addSwipedId(actress.id)
 
@@ -189,6 +191,30 @@ export default function SwipePage() {
     setTagUpdating(false)
     setTagUpdated(true)
     setShowTagSelector(false)
+  }
+
+  const goBack = () => {
+    if (history.length === 0) return
+    const prevIndex = history[history.length - 1]
+    setHistory(prev => prev.slice(0, -1))
+    setIndex(prevIndex)
+    setAnimating(null)
+    setDragOffset({ x: 0, y: 0 })
+    // スワイプ済みから削除
+    const swipedIds = getSwipedIds()
+    const prevActress = cards[prevIndex]
+    if (prevActress) {
+      try {
+        localStorage.setItem(SWIPED_KEY, JSON.stringify(swipedIds.filter(id => id !== prevActress.id)))
+      } catch {}
+    }
+    // お気に入りから削除
+    const likedActress = likedItems.find(a => a.id === cards[prevIndex]?.id)
+    if (likedActress && user) {
+      supabase.from('favorites').delete().eq('user_id', user.id).eq('actress_id', likedActress.id)
+      setLikedItems(prev => prev.filter(a => a.id !== likedActress.id))
+    }
+    if (done) setDone(false)
   }
 
   const finishSwipe = () => {
@@ -431,12 +457,16 @@ export default function SwipePage() {
         </div>
 
         {/* ボタン */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '10px 0 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', padding: '10px 0 0', alignItems: 'center' }}>
+          <button
+            onClick={goBack}
+            disabled={history.length === 0}
+            style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#fff', border: '2px solid #aaa', color: '#aaa', fontSize: '18px', cursor: history.length === 0 ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: history.length === 0 ? 0.4 : 1 }}
+          >↩</button>
           <button
             onClick={() => current && triggerAnim('left', current)}
             style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #ff3b30', color: '#ff3b30', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >✕</button>
-
           <button
             onClick={() => current && triggerAnim('right', current)}
             style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', border: '2px solid #4cd964', color: '#4cd964', fontSize: '24px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
