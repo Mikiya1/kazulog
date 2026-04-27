@@ -84,8 +84,12 @@ export default function Home() {
       setFavorites(favs)
       setNewcomers(newcomerRes.data ?? [])
       // ストーリー用：直近3ヶ月に新作がある女優だけ
-      const activeIds = new Set((activeRes.data ?? []).map((f: any) => f.actress_id))
-      const activeFavs = favs.filter(f => activeIds.has(f.actress_id))
+      // storyFavoritesはactiveResのデータをそのまま使う（最新のimageURLを保証）
+      const activeFavs = (activeRes.data ?? []).map((f: any) => ({
+        actress_id: f.actress_id,
+        actress_name: f.actress_name,
+        actress_image: f.actress_image,
+      }))
       setStoryFavorites(activeFavs)
 
       // お気に入り女優の最新作を取得（女優ごとに1件ずつ）
