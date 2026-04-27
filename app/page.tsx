@@ -47,6 +47,7 @@ export default function Home() {
   const [weeklyWorks, setWeeklyWorks] = useState<Work[]>([])
   const [monthlyWorks, setMonthlyWorks] = useState<Work[]>([])
   const [newWorks, setNewWorks] = useState<Work[]>([])
+  const [storyFavorites, setStoryFavorites] = useState<Favorite[]>([])
   const [showAllWeekly, setShowAllWeekly] = useState(false)
   const [showAllMonthly, setShowAllMonthly] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -58,16 +59,21 @@ export default function Home() {
       const u = session?.user ?? null
       setUser(u)
 
-      const [weeklyRes, monthlyRes, favsRes] = await Promise.all([
+      const [weeklyRes, monthlyRes, favsRes, activeRes] = await Promise.all([
         supabase.rpc('get_ranking_works', { p_sort: 'weekly', p_limit: 10 }),
         supabase.rpc('get_ranking_works', { p_sort: 'monthly', p_limit: 10 }),
         u ? supabase.from('favorites').select('actress_id, actress_name, actress_image').eq('user_id', u.id).limit(20) : Promise.resolve({ data: [] }),
+        u ? supabase.rpc('get_active_favorites', { p_user_id: u.id, p_months: 3 }) : Promise.resolve({ data: [] }),
       ])
 
       setWeeklyWorks(weeklyRes.data ?? [])
       setMonthlyWorks(monthlyRes.data ?? [])
       const favs = (favsRes.data ?? []) as Favorite[]
       setFavorites(favs)
+      // ストーリー用：直近3ヶ月に新作がある女優だけ
+      const activeIds = new Set((activeRes.data ?? []).map((f: any) => f.actress_id))
+      const activeFavs = favs.filter(f => activeIds.has(f.actress_id))
+      setStoryFavorites(activeFavs)
 
       // お気に入り女優の最新作を取得（女優ごとに1件ずつ）
       if (favs.length > 0) {
@@ -121,10 +127,10 @@ export default function Home() {
               <div onClick={() => router.push('/actresses')} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--card)', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto 4px', fontSize: '24px' }}>+</div>
               <div style={{ fontSize: '10px', color: 'var(--subtext)', fontWeight: '600' }}>追加</div>
             </div>
-            {!loading && favorites.length === 0 && (
+            {!loading && storyFavorites.length === 0 && (
               <div style={{ display: 'flex', alignItems: 'center', color: 'var(--subtext)', fontSize: '12px' }}>お気に入り女優を追加するとここに表示されます</div>
             )}
-            {[...favorites].sort((a, b) => {
+            {[...storyFavorites].sort((a, b) => {
               const aSeen = seenActresses.includes(a.actress_id)
               const bSeen = seenActresses.includes(b.actress_id)
               if (aSeen && !bSeen) return 1
@@ -133,7 +139,7 @@ export default function Home() {
             }).map((fav, idx) => (
               <div key={fav.actress_id} style={{ flexShrink: 0, textAlign: 'center', width: '68px' }}>
                 <div
-                  onClick={() => router.push(`/story?index=${favorites.findIndex(f => f.actress_id === fav.actress_id)}&ids=${favorites.map(f => f.actress_id).join(',')}&names=${favorites.map(f => encodeURIComponent(f.actress_name)).join(',')}&images=${favorites.map(f => encodeURIComponent(f.actress_image)).join(',')}`)}
+                  onClick={() => router.push(`/story?index=${storyFavorites.findIndex(f => f.actress_id === fav.actress_id)}&ids=${storyFavorites.map(f => f.actress_id).join(',')}&names=${storyFavorites.map(f => encodeURIComponent(f.actress_name)).join(',')}&images=${storyFavorites.map(f => encodeURIComponent(f.actress_image)).join(',')}`)}
                   style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', margin: '0 auto 4px', boxShadow: seenActresses.includes(fav.actress_id) ? '0 0 0 2.5px #ccc, 0 0 0 4px white' : '0 0 0 2.5px #FD297B, 0 0 0 4px white' }}
                 >
                   {fav.actress_image ? (
