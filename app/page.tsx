@@ -62,6 +62,7 @@ export default function Home() {
   const [showAllMonthly, setShowAllMonthly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [seenActresses, setSeenActresses] = useState<string[]>([])
+  const [newWorkActresses, setNewWorkActresses] = useState<Set<string>>(new Set())
   const [newcomers, setNewcomers] = useState<Newcomer[]>([])
 
   useEffect(() => {
@@ -121,7 +122,25 @@ export default function Home() {
         const data = JSON.parse(raw)
         const now = Date.now()
         const filtered = data.filter((d: any) => now - d.ts < 86400000)
-        setSeenActresses(filtered.map((d: any) => d.id))
+        const seenIds = filtered.map((d: any) => d.id as string)
+        setSeenActresses(seenIds)
+
+        // 既読女優の中で新作が出てるか確認
+        if (seenIds.length > 0) {
+          const { data: latestWorks } = await supabase
+            .from('actress_latest_works')
+            .select('actress_id, latest_work_date')
+            .in('actress_id', seenIds)
+
+          const newSet = new Set<string>()
+          ;(latestWorks ?? []).forEach((lw: any) => {
+            const seenEntry = data.find((d: any) => d.id === lw.actress_id)
+            if (seenEntry && new Date(lw.latest_work_date).getTime() > seenEntry.ts) {
+              newSet.add(lw.actress_id)
+            }
+          })
+          setNewWorkActresses(newSet)
+        }
       }
     } catch {}
   }, [])
@@ -157,7 +176,11 @@ export default function Home() {
               <div key={fav.actress_id} style={{ flexShrink: 0, textAlign: 'center', width: '68px' }}>
                 <div
                   onClick={() => router.push(`/story?index=${storyFavorites.findIndex(f => f.actress_id === fav.actress_id)}&ids=${storyFavorites.map(f => f.actress_id).join(',')}&names=${storyFavorites.map(f => encodeURIComponent(f.actress_name)).join(',')}&images=${storyFavorites.map(f => encodeURIComponent(f.actress_image)).join(',')}`)}
-                  style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', margin: '0 auto 4px', boxShadow: seenActresses.includes(fav.actress_id) ? '0 0 0 2.5px #ccc, 0 0 0 4px white' : '0 0 0 2.5px #FD297B, 0 0 0 4px white' }}
+                  style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', margin: '0 auto 4px', boxShadow: 
+                    seenActresses.includes(fav.actress_id) && !newWorkActresses.has(fav.actress_id)
+                      ? '0 0 0 2.5px #ccc, 0 0 0 4px white'
+                      : '0 0 0 2.5px #FD297B, 0 0 0 4px white'
+                  }}
                 >
                   {fav.actress_image ? (
                     <Image src={fav.actress_image} alt={fav.actress_name} width={60} height={60} style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
