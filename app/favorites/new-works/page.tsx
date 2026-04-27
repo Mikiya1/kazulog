@@ -97,10 +97,10 @@ export default function NewWorksPage() {
         })
       })
 
-      // 発売日順にソート
-      const sorted = Array.from(map.values()).sort((a, b) =>
-        (b.date ?? '').localeCompare(a.date ?? '')
-      )
+      // VR作品を除外してから発売日順にソート
+      const sorted = Array.from(map.values())
+        .filter(w => !w.title.includes('VR'))
+        .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
       setWorks(sorted)
       setFetchLoading(false)
     })
