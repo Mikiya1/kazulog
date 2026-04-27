@@ -57,11 +57,12 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
     setLoading(true)
 
     // 全部並列取得
-    const [tagsRes, favsRes, actressRes, workRes] = await Promise.all([
+    const [tagsRes, favsRes, actressRes, workRes, costarRes] = await Promise.all([
       supabase.from('user_preferred_tags').select('tag_name').eq('user_id', userId),
       supabase.from('favorites').select('actress_id').eq('user_id', userId),
       supabase.rpc('get_recommended_actresses', { p_user_id: userId, p_limit: 20 }),
       supabase.rpc('get_recommended_works', { p_user_id: userId, p_limit: 20 }),
+      supabase.rpc('get_costar_actresses', { p_user_id: userId, p_limit: 10 }),
     ])
 
     const tags = tagsRes.data ?? []
@@ -75,6 +76,7 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
     setFavoriteIds((favsRes.data ?? []).map(f => f.actress_id))
     setActresses(actressRes.data ?? [])
     setWorks(workRes.data ?? [])
+    setCostars(costarRes.data ?? [])
     setLoading(false)
   }
 
