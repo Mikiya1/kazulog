@@ -49,10 +49,18 @@ export async function GET(request: NextRequest) {
     const data = await res.json()
 
     if (data.result?.items) {
-      data.result.items = data.result.items.map((item: { affiliateURL?: string }) => ({
-        ...item,
-        affiliateURL: item.affiliateURL?.replace(AFFILIATE_ID!, SITE_AFFILIATE_ID!) ?? item.affiliateURL,
-      }))
+      const VR_GENRES = ['VR', 'VR専用', 'ハイクオリティVR', '8KVR']
+      data.result.items = data.result.items
+        .filter((item: any) => {
+          if (item.title?.includes('VR')) return false
+          const genres = item.iteminfo?.genre?.map((g: any) => g.name) ?? []
+          if (genres.some((g: string) => VR_GENRES.includes(g))) return false
+          return true
+        })
+        .map((item: any) => ({
+          ...item,
+          affiliateURL: item.affiliateURL?.replace(AFFILIATE_ID!, SITE_AFFILIATE_ID!) ?? item.affiliateURL,
+        }))
     }
 
     return NextResponse.json(data)
