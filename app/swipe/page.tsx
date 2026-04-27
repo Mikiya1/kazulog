@@ -244,7 +244,7 @@ export default function SwipePage() {
     <>
       <Header />
 
-      <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '480px', margin: '0 auto', padding: '12px 16px 80px', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ background: 'var(--bg)', height: 'calc(100vh - 57px)', maxWidth: '480px', margin: '0 auto', padding: '8px 16px 12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* 進捗 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -257,13 +257,13 @@ export default function SwipePage() {
         </div>
 
         {/* カードエリア */}
-        <div style={{ position: 'relative', flex: 1, minHeight: '420px' }}>
+        <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
 
           {/* 次のカード */}
           {cards[index + 1] && (
             <div style={{ position: 'absolute', width: '100%', transform: 'scale(0.95)', transformOrigin: 'bottom', filter: 'brightness(0.8)' }}>
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-                <div style={{ height: '300px', position: 'relative', background: '#f8f0f4' }}>
+                <div style={{ flex: 1, position: 'relative', background: '#f8f0f4', minHeight: '200px' }}>
                   {cards[index + 1].image_url && (
                     <Image src={getLargeImageUrl(cards[index + 1].image_url)} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                   )}
@@ -276,7 +276,7 @@ export default function SwipePage() {
           {current && (
             <div
               ref={cardRef}
-              style={getCardStyle()}
+              style={{ ...getCardStyle(), height: '100%' }}
               onMouseDown={handleDragStart}
               onMouseMove={handleDragMove}
               onMouseUp={handleDragEnd}
@@ -286,7 +286,7 @@ export default function SwipePage() {
             >
               <div style={{ background: 'var(--card)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
                 {/* 画像 */}
-                <div style={{ height: '300px', position: 'relative', background: '#f8f0f4' }}>
+                <div style={{ flex: 1, position: 'relative', background: '#f8f0f4', minHeight: '200px' }}>
                   {current.image_url && (
                     <Image src={getLargeImageUrl(current.image_url)} alt={current.name} fill style={{ objectFit: 'cover', objectPosition: 'top' }} unoptimized />
                   )}
