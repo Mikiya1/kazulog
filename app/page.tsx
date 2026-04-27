@@ -35,7 +35,7 @@ const RankCard = ({ work, rank, onClick }: { work: Work; rank: number; onClick: 
       <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>
         {work.title}
       </div>
-      <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px' }}>{work.date ? `📅 ${new Date(work.date).toLocaleDateString('ja-JP', {month: 'numeric', day: 'numeric'})}発売　` : ''}{work.volume ? `🕐 ${work.volume}分` : ''}</div>
+      <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px' }}>{work.date ? `📅 ${new Date(work.date).toLocaleDateString('ja-JP', {year: 'numeric', month: 'numeric', day: 'numeric'})}発売　` : ''}{work.volume ? `🕐 ${work.volume}分` : ''}</div>
     </div>
   </div>
 )
@@ -112,7 +112,7 @@ export default function Home() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return ''
     const d = new Date(dateStr)
-    return `${d.getMonth() + 1}/${d.getDate()}`
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
   }
 
   return (
@@ -215,7 +215,7 @@ export default function Home() {
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px' }}>
                         {w.date && <span>📅 {formatDate(w.date)}</span>}
-                        {w.date && <span>📅 {new Date(w.date).toLocaleDateString('ja-JP', {month: 'numeric', day: 'numeric'})}発売　</span>}{w.volume && <span>🕐 {w.volume}分</span>}
+                        {w.date && <span>📅 {new Date(w.date).toLocaleDateString('ja-JP', {year: 'numeric', month: 'numeric', day: 'numeric'})}発売　</span>}{w.volume && <span>🕐 {w.volume}分</span>}
                       </div>
                     </div>
                   </div>

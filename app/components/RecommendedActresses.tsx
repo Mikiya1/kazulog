@@ -216,7 +216,7 @@ export default function RecommendedActresses({ compact = false }: { compact?: bo
                     {w.title}
                   </div>
                   {w.volume && (
-                    <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px' }}>{w.date ? `📅 ${new Date(w.date).toLocaleDateString('ja-JP', {month: 'numeric', day: 'numeric'})}発売　` : ''}{w.volume ? `🕐 ${w.volume}分` : ''}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '4px' }}>{w.date ? `📅 ${new Date(w.date).toLocaleDateString('ja-JP', {year: 'numeric', month: 'numeric', day: 'numeric'})}発売　` : ''}{w.volume ? `🕐 ${w.volume}分` : ''}</div>
                   )}
                 </div>
               </div>

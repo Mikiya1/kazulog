@@ -150,7 +150,7 @@ export default function StoryPage() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return ''
     const d = new Date(dateStr)
-    return `${d.getMonth() + 1}月${d.getDate()}日発売`
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日発売`
   }
 
   if (!params) return null

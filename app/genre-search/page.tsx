@@ -780,7 +780,7 @@ export default function GenreSearchPage() {
                       )}
                       {work.volume && (
                         <div style={{ fontSize: '11px', color: 'var(--subtext)', marginTop: '2px' }}>
-                          {work.date ? `📅 ${new Date(work.date).toLocaleDateString('ja-JP', {month: 'numeric', day: 'numeric'})}発売　` : ''}🕐 {work.volume}分
+                          {work.date ? `📅 ${new Date(work.date).toLocaleDateString('ja-JP', {year: 'numeric', month: 'numeric', day: 'numeric'})}発売　` : ''}🕐 {work.volume}分
                         </div>
                       )}
                           <button
