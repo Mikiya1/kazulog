@@ -112,8 +112,7 @@ export default function PreferredTagsPage() {
 
   const addManualTag = async (tagName: string) => {
     if (!user) return
-    const manualCount = preferredTags.filter(t => t.is_manual).length
-    if (manualCount >= 10) return
+    if (preferredTags.length >= 10) return
     if (preferredTags.find(t => t.tag_name === tagName)) return
     await supabase.from('user_preferred_tags').upsert({
       user_id: user.id, tag_name: tagName, score: 999, is_manual: true,
@@ -224,7 +223,7 @@ export default function PreferredTagsPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {cat.genres.map(g => {
                       const already = existingTagNames.includes(g.name)
-                      const manualFull = manualTags.length >= 10
+                      const manualFull = preferredTags.length >= 10
                       const disabled = already || manualFull
                       return (
                         <button key={g.id} onClick={() => !disabled && addManualTag(g.name)} style={{
